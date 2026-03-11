@@ -2,9 +2,9 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>永夜之境：宗師歸來 V0.3.3 (Stable)</title>
+    <title>永夜之境：宗師歸來 V0.3.6 (Stable)</title>
     <style>
-        :root { --bg: #0a0a0f; --panel: #161622; --gold: #ffd700; --cherry: #ffb7c5; --accent: #70a1ff; --quest: #55efc4; --danger: #ff4757; --gm: #00cec9; --mat: #e1b12c; }
+        :root { --bg: #0a0a0f; --panel: #161622; --gold: #ffd700; --cherry: #ffb7c5; --accent: #70a1ff; --quest: #55efc4; --danger: #ff4757; --gm: #00cec9; --mat: #e1b12c; --skill: #9b59b6; }
         body { background: var(--bg); color: #e0e0e0; font-family: 'PingFang TC', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 0; margin: 0; overflow-x: hidden; }
         .container { width: 95%; max-width: 900px; padding: 20px; }
         .hidden { display: none !important; }
@@ -22,13 +22,13 @@
         .val { display: block; font-size: 1.1em; font-weight: bold; color: var(--gold); }
         
         .view-content { background: var(--panel); padding: 20px; border-radius: 12px; min-height: 500px; border: 1px solid #333; position: relative; }
-        .battle-grid { display: grid; grid-template-columns: 1fr 50px 1fr; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .battle-grid { display: grid; grid-template-columns: 1fr 50px 1fr; align-items: center; gap: 10px; margin-bottom: 10px; }
         .unit-box { text-align: center; background: #111; padding: 10px; border-radius: 10px; position: relative; border: 1px solid #333; }
         
         .bar-bg { background: #222; height: 16px; border-radius: 8px; margin: 5px 0; overflow: hidden; position: relative; border: 1px solid #000; }
         .hp-fill { background: linear-gradient(to right, #ff4757, #ff7675); height: 100%; transition: 0.2s; position: absolute; top: 0; left: 0; }
         .exp-fill { background: linear-gradient(to right, #55efc4, #00b894); height: 100%; transition: 0.2s; position: absolute; top: 0; left: 0; }
-        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 11px; line-height: 16px; color: white; font-weight: bold; text-shadow: 1px 1px 2px black, -1px -1px 2px black; z-index: 5; pointer-events: none; }
+        .bar-text { position: absolute; width: 100%; text-align: center; font-size: 11px; line-height: 16px; color: white; font-weight: bold; text-shadow: 1px 1px 2px black; z-index: 5; pointer-events: none; }
 
         .prep-area { background: rgba(0,0,0,0.4); border: 1px solid #444; border-radius: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 0.9em; }
         .prep-controls { display: flex; align-items: center; gap: 10px; }
@@ -36,7 +36,7 @@
         .stat-alloc-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-top: 10px; }
         .stat-row { text-align: center; }
         .stat-label { font-size: 0.8em; color: #aaa; margin-bottom: 5px; }
-        .stat-val { font-size: 1.2em; font-weight: bold; color: var(--gold); transition: color 0.3s; margin: 0 10px; display: inline-block; min-width: 25px; }
+        .stat-val { font-size: 1.2em; font-weight: bold; color: var(--gold); margin: 0 10px; display: inline-block; min-width: 25px; }
         .preview-val { color: #2ecc71; font-size: 0.9em; margin-left: 2px; }
         .btn-plus { width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--cherry); background: none; color: var(--cherry); cursor: pointer; font-weight: bold; margin-top: 5px; font-size: 1.2em; }
         .btn-plus:disabled { border-color: #444; color: #444; cursor: not-allowed; opacity: 0.5; }
@@ -62,8 +62,8 @@
         #revive-timer-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; z-index: 200; padding: 10px; box-sizing: border-box; }
         .death-tip { font-size: 0.8em; color: var(--gold); margin-top: 15px; line-height: 1.4; font-style: italic; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 5px; }
 
-        .skill-bar { display: none; justify-content: center; gap: 10px; margin-bottom: 10px; }
-        .skill-slot { width: 40px; height: 40px; border: 1px dashed #555; border-radius: 8px; background: #111; display: flex; justify-content: center; align-items: center; font-size: 0.8em; color: #666; cursor: pointer; }
+        /* 📝 V0.3.6 新增技能與援助狀態列 CSS */
+        .skill-status-bar { background: #111; border: 1px solid #333; border-radius: 8px; padding: 8px 15px; margin-bottom: 10px; display: flex; justify-content: space-between; font-size: 0.9em; color: #aaa; }
     </style>
 </head>
 <body>
@@ -80,27 +80,18 @@
                 <div class="stat-alloc-grid" style="padding:10px; margin-top:0; background:transparent;">
                     <div class="stat-row">
                         <span style="font-size:0.85em; color:white;">力量</span><br>
-                        <div>
-                            <button class="btn-plus" onclick="allocInitStat('str', 1)">+</button><br>
-                            <b id="init-str" class="stat-val">2</b>
-                        </div>
-                        <span class="hint">提升斬擊威力<br>追求極致傷害</span>
+                        <div><button class="btn-plus" onclick="allocInitStat('str', 1)">+</button><br><b id="init-str" class="stat-val">2</b></div>
+                        <span class="hint">提升斬擊威力</span>
                     </div>
                     <div class="stat-row">
                         <span style="font-size:0.85em; color:white;">體質</span><br>
-                        <div>
-                            <button class="btn-plus" onclick="allocInitStat('vit', 1)">+</button><br>
-                            <b id="init-vit" class="stat-val">1</b>
-                        </div>
-                        <span class="hint">強化身法體魄<br>提升生命減傷</span>
+                        <div><button class="btn-plus" onclick="allocInitStat('vit', 1)">+</button><br><b id="init-vit" class="stat-val">1</b></div>
+                        <span class="hint">強化身法體魄</span>
                     </div>
                     <div class="stat-row">
                         <span style="font-size:0.85em; color:white;">敏捷</span><br>
-                        <div>
-                            <button class="btn-plus" onclick="allocInitStat('agi', 1)">+</button><br>
-                            <b id="init-agi" class="stat-val">0</b>
-                        </div>
-                        <span class="hint">精進反應速度<br>掌握先機閃避</span>
+                        <div><button class="btn-plus" onclick="allocInitStat('agi', 1)">+</button><br><b id="init-agi" class="stat-val">0</b></div>
+                        <span class="hint">精進反應速度</span>
                     </div>
                 </div>
                 <p style="font-size:0.85em; color:var(--cherry); margin-bottom:5px;">剩餘點數：<span id="init-points" style="font-size:1.2em; font-weight:bold;">5</span></p>
@@ -118,7 +109,7 @@
 <div id="slot-screen">
     <div style="text-align: center; margin-bottom: 30px;">
         <h1 style="color:var(--cherry); margin-bottom: 5px;">⛩️ 永夜之境 ⛩️</h1>
-        <small style="color: #666; letter-spacing: 2px;">宗師歸來 V0.3.3 (Stable)</small>
+        <small style="color: #666; letter-spacing: 2px;">宗師歸來 V0.3.6 (Stable)</small>
     </div>
     <div id="slots-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
     <div style="margin-top: 30px; font-size: 0.85em; color: #888; text-align: center; line-height: 1.5;">
@@ -146,7 +137,7 @@
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
             <div>
                 <span id="map-ui-area"><select id="map-selector" onchange="changeMap()"></select></span>
-                <span id="map-info" style="font-size:11px; color:#aaa; margin-left:8px;" title="關卡掉落與收益資訊"></span>
+                <span id="map-info" style="font-size:11px; color:#aaa; margin-left:8px;"></span>
             </div>
             <span style="color:var(--gold)">金幣: <span id="p-gold">0</span> | <span id="kill-text">擊殺: <span id="kill-count">0</span>/10</span></span>
         </div>
@@ -170,10 +161,9 @@
             </div>
         </div>
 
-        <div class="skill-bar" id="skill-slots-area">
-            <div class="skill-slot" title="主動技能">主</div>
-            <div class="skill-slot" title="被動技能">被</div>
-            <div class="skill-slot" title="被動技能">被</div>
+        <div class="skill-status-bar" id="skill-status-area">
+            <div><span style="color:var(--skill);">🔮 技能:</span> <span id="skill-name">未解鎖</span> <span id="skill-cd" style="color:white;"></span></div>
+            <div><span style="color:var(--accent);">🐾 援助:</span> <span id="support-name">無</span></div>
         </div>
 
         <div class="prep-area">
@@ -253,7 +243,7 @@
 
 <script>
 /* ==========================================================================
-⛩️ 《永夜之境：宗師歸來》 核心設定 V0.3.3 (Stable)
+⛩️ 《永夜之境：宗師歸來》 核心設定 V0.3.6 (Stable)
 ========================================================================== */
 
 const pathNames = { none: '流浪者', samurai: '武士', onmyoji: '陰陽師', shinto: '神道教' };
@@ -281,6 +271,16 @@ const matData = {
     m4: { name: '雷精的碎核', val: 80 }
 };
 
+// 📝 V0.3.5 技能與體系設定
+const heritageData = {
+    samurai_gou: { name: '剛之位', sName: '一閃', sDesc: '下一次攻擊傷害 300%', cd: 10 },
+    samurai_juu: { name: '柔之位', sName: '無刀取', sDesc: '獲得3秒格擋，受傷降至1並反彈傷害', cd: 12 },
+    onmyoji_jutsu: { name: '術之式', sName: '五行落雷', sDesc: '造成連續三次屬性傷害', cd: 8 },
+    onmyoji_baku: { name: '縛之式', sName: '呪言·縛', sDesc: '禁錮敵人3秒', cd: 15, support: '護法童子' },
+    shinto_ara: { name: '荒魂', sName: '神威怒濤', sDesc: '5秒內將體質轉化為攻擊力', cd: 12 },
+    shinto_nigi: { name: '和魂', sName: '天照光幕', sDesc: '立即回血30%', cd: 15, support: '御先稻荷' }
+};
+
 let currentSlotKey = "";
 
 const defaultPlayer = {
@@ -288,6 +288,7 @@ const defaultPlayer = {
     str: 2, vit: 1, agi: 0, statPoints: 5, 
     lockedStats: { str: 2, vit: 1, agi: 0 },
     hp: 100, mhp: 100, mapIdx: 0, maxMapIdx: 0, kills: 0, path: 'none', 
+    subPath: 'none', // 📝 記錄玩家選擇的體系
     autoBoss: false, revives: 0, lastSaveTime: Date.now(),
     potions: { p1: 5, p2: 0, p3: 0, p4: 0 }, 
     mats: { m0: 0, m1: 0, m2: 0, m3: 0, m4: 0 }, 
@@ -307,6 +308,15 @@ let bossPhase2 = false;
 let pendingDeleteKey = null;
 
 let statPreview = { str: 0, vit: 0, agi: 0 };
+
+// 📝 戰鬥狀態暫存
+let combatState = {
+    skillCd: 0,
+    supportCd: 0,
+    blockTimer: 0, 
+    bindTimer: 0,  
+    kamiTimer: 0   
+};
 
 const initBaseStats = { str: 2, vit: 1, agi: 0 };
 let initAllocatedStats = { str: 2, vit: 1, agi: 0 };
@@ -360,11 +370,18 @@ function resetInitStats() {
 
 function loadGame() { 
     let s = localStorage.getItem(currentSlotKey); 
+    
+    // Reset player completely before merging
+    player = JSON.parse(JSON.stringify(defaultPlayer));
+    
     if(s) {
         let sd = JSON.parse(s); 
+        // Safe deep merge
         if(!sd.potions || typeof sd.potions !== 'object') sd.potions = { p1: 5, p2: 0, p3: 0, p4: 0 };
         if(!sd.mats) sd.mats = { m0: 0, m1: 0, m2: 0, m3: 0, m4: 0 };
         if(!sd.gear) sd.gear = { arms: 0, body: 0, legs: 0 };
+        if(!sd.subPath) sd.subPath = 'none';
+        
         Object.assign(player, sd);
         
         if(player.selectedPotion === undefined) player.selectedPotion = 'p1';
@@ -373,13 +390,11 @@ function loadGame() {
         if(!player.lockedStats) player.lockedStats = { str: player.str, vit: player.vit, agi: player.agi };
         if(player.lvl === 1 && player.exp < 30 && player.next === 100) player.next = 30;
         if(!player.name || player.name === "") player.name = "無名者";
-    } else {
-        player = JSON.parse(JSON.stringify(defaultPlayer));
     }
     
     initPotionSelect();
     
-    if(!player.name) { 
+    if(!player.name || player.name === "") { 
         document.getElementById('naming-area').classList.remove('hidden'); 
         resetInitStats();
         openModal("踏入輪迴", "名號一旦定下，便與靈魂綁定。請確認好您的修行天賦：", "開啟旅程", () => { 
@@ -405,7 +420,7 @@ function loadGame() {
 function postLoadInit() { 
     updateMapSelector(); spawn(false); updateUI(); isPaused = false; 
     
-    log("💡 【版本廣播】V0.3.3 修復 情報界面顯示 鍛造屋系統。", "var(--accent)");
+    log("💡 【版本廣播】V0.3.6 流派雙體系與技能全面實裝！前往道場選擇妳的道路。", "var(--accent)");
     if(player.lvl === 1 && player.exp === 0 && player.gold === 0 && player.potions.p1 === 5) {
         log("🎁 新手物資已發放：薄濁之水 x5", "var(--quest)");
     }
@@ -436,6 +451,7 @@ function promptImportCode() {
 function initPotionSelect() {
     const sel = document.getElementById('potion-select'); sel.innerHTML = "";
     if(!player.potions) player.potions = { p1: 5, p2: 0, p3: 0, p4: 0 };
+    
     for(let k in potionData) {
         let rateTxt = `(+${Math.floor(potionData[k].rate * 100)}%)`;
         sel.innerHTML += `<option value="${k}">${potionData[k].name} ${rateTxt}</option>`;
@@ -487,6 +503,7 @@ function beginTrial(type) {
     let duration = type === 'onmyoji' ? 10 : (type === 'shinto' ? 30 : 0); 
     trial = { active: true, type: type, progress: 0, timeLeft: duration, timer: null, healTimer: null, bossTimer: null, hits: 0 };
     bossPhase2 = false; 
+    resetCombatState();
     player.kills = 0; switchView('battle');
     
     if(type !== 'samurai') {
@@ -520,7 +537,8 @@ function endTrial(success) {
     trial.active = false;
     bossPhase2 = false;
     
-    document.getElementById('kill-text').innerHTML = `擊殺: <span id="kill-count">0</span>/10`;
+    let kText = document.getElementById('kill-text');
+    if(kText) kText.innerHTML = `擊殺: <span id="kill-count">0</span>/10`;
 
     if (success) {
         let msg = trial.type === 'samurai' ? "<b>【門生】助六</b> 大笑：「好！妳就是天覽武道台的一員了！」" : trial.type === 'onmyoji' ? "<b>【生員】螢</b> 點頭：「合格了。去向寮頭報到吧。」" : "<b>【巫女】小梅</b> 拍手：「太好了！歡迎來到八百萬神殿！」";
@@ -531,9 +549,12 @@ function endTrial(success) {
     player.hp = getMaxHP(); spawn(false); updateMapSelector(); updateUI(); 
 }
 
+// 📝 裝備加成公式重構
 function getAtkVal() {
     let base = Math.floor(player.str * (player.path === 'samurai' ? 2.0 : 1.5));
-    return base + (player.gear.arms * 3); 
+    base += (player.gear.arms * 3); 
+    if(combatState.kamiTimer > 0) base += player.vit; // 神威怒濤加成
+    return base;
 }
 
 function getDefPercent(vit) {
@@ -548,37 +569,95 @@ function getEvaPercent(agi, path) {
     return Math.min(path === 'onmyoji' ? 80 : 60, base);
 }
 
+function resetCombatState() { combatState = { skillCd: 0, supportCd: 0, blockTimer: 0, bindTimer: 0, kamiTimer: 0 }; }
+
 function startBattleLoop() {
     if(battleTimer) clearTimeout(battleTimer); if(isPaused || currentView !== 'battle' || isReviving) return;
     if(player.autoHealEnabled && player.autoHeal > 0 && (player.hp / getMaxHP()) < player.autoHeal) autoHealLogic();
-    let delay = Math.max(200, 1500 - player.agi * (player.path === 'onmyoji' ? 18 : 15));
     
+    let delay = Math.max(200, 1500 - player.agi * (player.path === 'onmyoji' ? 18 : 15));
+    let tickSec = delay / 1000;
+    
+    if(combatState.skillCd > 0) combatState.skillCd = Math.max(0, combatState.skillCd - tickSec);
+    if(combatState.supportCd > 0) combatState.supportCd = Math.max(0, combatState.supportCd - tickSec);
+    if(combatState.blockTimer > 0) combatState.blockTimer = Math.max(0, combatState.blockTimer - tickSec);
+    if(combatState.bindTimer > 0) combatState.bindTimer = Math.max(0, combatState.bindTimer - tickSec);
+    if(combatState.kamiTimer > 0) combatState.kamiTimer = Math.max(0, combatState.kamiTimer - tickSec);
+
     let pDmg = getAtkVal();
-    let crit = Math.min(80, 5 + (player.path === 'samurai' ? player.str * 0.15 : 0));
-    let isCrit = Math.random() * 100 < crit; if(isCrit) pDmg = Math.floor(pDmg * 1.5);
+    let isSkillCast = false;
+    let isCrit = false;
     
     if(trial.active && trial.type === 'samurai') {
         if(!bossPhase2 && monster.hp <= monster.mhp * 0.5) {
             bossPhase2 = true;
-            log("⚠️ 浪人眼神一凜，架起了薙刀進入【防禦姿態】！", "var(--danger)");
+            log("⚠️ 浪人架起了薙刀進入【防禦姿態】！", "var(--danger)");
             showDmg('m-box', "防禦強化", "var(--quest)");
         }
         if(bossPhase2) pDmg = Math.floor(pDmg * 0.5); 
     }
 
+    // 📝 觸發玩家主動技能
+    if(player.subPath !== 'none' && combatState.skillCd <= 0 && monster.hp > 0 && !trial.active) {
+        let hData = heritageData[player.subPath];
+        combatState.skillCd = hData.cd;
+        isSkillCast = true;
+        
+        if(player.subPath === 'samurai_gou') { pDmg = pDmg * 3; showDmg('p-box', "【一閃】", "var(--skill)"); }
+        else if(player.subPath === 'samurai_juu') { combatState.blockTimer = 3; showDmg('p-box', "【無刀取】", "var(--skill)"); }
+        else if(player.subPath === 'onmyoji_jutsu') { 
+            showDmg('p-box', "【五行雷】", "var(--skill)"); 
+            setTimeout(()=> { if(monster.hp>0 && !isPaused) { monster.hp -= pDmg; showDmg('m-box', pDmg, 'yellow'); updateUI(); }}, 200);
+            setTimeout(()=> { if(monster.hp>0 && !isPaused) { monster.hp -= pDmg; showDmg('m-box', pDmg, 'yellow'); updateUI(); }}, 400);
+        }
+        else if(player.subPath === 'onmyoji_baku') { combatState.bindTimer = 3; showDmg('m-box', "【禁錮】", "var(--skill)"); pDmg = 0; }
+        else if(player.subPath === 'shinto_ara') { combatState.kamiTimer = 5; showDmg('p-box', "【神威】", "var(--skill)"); pDmg = 0; }
+        else if(player.subPath === 'shinto_nigi') { let heal = Math.floor(getMaxHP()*0.3); player.hp = Math.min(getMaxHP(), player.hp+heal); showDmg('p-box', `+${heal}`, "lime"); pDmg = 0; }
+    }
+
+    if(!isSkillCast && pDmg > 0) {
+        let crit = Math.min(80, 5 + (player.path === 'samurai' ? player.str * 0.15 : 0));
+        isCrit = Math.random() * 100 < crit; if(isCrit) pDmg = Math.floor(pDmg * 1.5);
+    }
+
+    // 📝 觸發援助角色攻擊
+    if(player.subPath !== 'none' && heritageData[player.subPath].support && combatState.supportCd <= 0 && monster.hp > 0 && !trial.active) {
+        combatState.supportCd = player.subPath === 'onmyoji_baku' ? 1.5 : 2.0; 
+        let sDmg = Math.floor(player.lvl * 5 + 10); 
+        setTimeout(() => {
+            if(monster.hp > 0 && !isPaused) {
+                monster.hp -= sDmg;
+                showDmg('m-box', sDmg, "var(--accent)");
+                updateUI();
+            }
+        }, 300);
+    }
+
     if(trial.active && trial.type === 'onmyoji') { 
         trial.hits++; 
         showDmg('m-box', pDmg, isCrit?'orange':'white'); 
-        document.getElementById('kill-text').innerHTML = `打擊數: <span style="color:white">${trial.hits}/10</span>`;
+        let kText = document.getElementById('kill-text');
+        if(kText) kText.innerHTML = `打擊數: <span style="color:white">${trial.hits}/10</span>`;
         if(trial.hits >= 10) { endTrial(true); return; } 
     }
-    else { monster.hp -= pDmg; showDmg('m-box', pDmg + (isCrit?"!!":""), isCrit?'orange':'white'); }
+    else if(pDmg > 0) { 
+        monster.hp -= pDmg; showDmg('m-box', pDmg + (isCrit?"!!":""), isCrit?'orange':'white'); 
+    }
     
-    if(monster.hp <= 0 && (!trial.active || trial.type !== 'onmyoji')) handleVictory();
-    else {
+    if(monster.hp <= 0 && (!trial.active || trial.type !== 'onmyoji')) {
+        handleVictory();
+    } else if (combatState.bindTimer <= 0) { 
         let eva = getEvaPercent(player.agi, player.path);
         if (Math.random() * 100 > eva) {
             let mDmg = Math.max(1, Math.floor(monster.atk * (1 - getDefPercent(player.vit) / 100)));
+            
+            if(combatState.blockTimer > 0) {
+                mDmg = 1;
+                let reflect = player.str * 2;
+                monster.hp -= reflect;
+                showDmg('m-box', reflect, 'yellow');
+                showDmg('p-box', "格擋", 'gray');
+            }
             player.hp -= mDmg; showDmg('p-box', mDmg, '#ff4757');
         } else showDmg('p-box', "MISS", 'skyblue');
     }
@@ -610,9 +689,11 @@ function handleVictory() {
         player.kills = 0; updateMapSelector();
     } else {
         player.exp += m.baseExp; player.gold += m.baseGold;
+        
         if (Math.random() < m.dropRate) { player.potions.p1++; log("🎁 獲得：薄濁之水 x1", "var(--quest)"); }
         if (Math.random() < 0.05) { player.mats[matKey]++; log(`💎 獲得：${matData[matKey].name} x1`, "var(--mat)"); }
         if (Math.random() < 0.10) { player.mats.m0++; log(`⚙️ 獲得：${matData.m0.name} x1`, "#aaa"); }
+
         if(player.mapIdx == player.maxMapIdx && player.kills < 10) player.kills++;
     }
     checkLevelUp(); spawn();
@@ -622,13 +703,13 @@ function handleDeath() {
     if(trial.active) { endTrial(false); return; }
     if(player.revives > 0) { player.revives--; log("🛡️ 不死御守發效！", "var(--gold)"); player.hp = getMaxHP(); return; }
     log(`💀 魂火熄滅...`, "var(--danger)");
-    player.hp = 0; isReviving = true;
+    player.hp = 0; isReviving = true; resetCombatState();
     if(monster.isBoss) { player.autoBoss = false; monster.hp = monster.mhp; setTimeout(() => spawn(false), 500); }
     let sec = 5; const ov = document.getElementById('revive-timer-overlay'); const txt = document.getElementById('revive-seconds');
-    ov.classList.remove('hidden'); txt.innerText = sec; updateUI();
+    if(ov) ov.classList.remove('hidden'); if(txt) txt.innerText = sec; updateUI();
     const timer = setInterval(() => {
-        sec--; txt.innerText = sec;
-        if(sec <= 0) { clearInterval(timer); ov.classList.add('hidden'); isReviving = false; player.hp = getMaxHP(); log("✨ 修行繼續。", "var(--quest)"); if(currentView === 'battle') startBattleLoop(); updateUI(); }
+        sec--; if(txt) txt.innerText = sec;
+        if(sec <= 0) { clearInterval(timer); if(ov) ov.classList.add('hidden'); isReviving = false; player.hp = getMaxHP(); log("✨ 修行繼續。", "var(--quest)"); if(currentView === 'battle') startBattleLoop(); updateUI(); }
     }, 1000);
 }
 
@@ -647,7 +728,8 @@ function spawn(boss = false) {
         let hp = 60 + player.mapIdx*250; monster = { name: m.mobs[Math.floor(Math.random()*m.mobs.length)], hp: hp, mhp: hp, atk: m.baseAtk, lvl: player.mapIdx*5+1, isBoss: false };
         if(player.kills >= 10 && player.mapIdx == player.maxMapIdx && player.autoBoss) setTimeout(() => spawn(true), 1000);
     }
-    document.getElementById('btn-boss').disabled = (player.kills < 10 || monster.isBoss || isReviving);
+    let btn = document.getElementById('btn-boss');
+    if(btn) btn.disabled = (player.kills < 10 || monster.isBoss || isReviving);
 }
 
 function getMaxHP() { return player.path === 'shinto' ? player.vit * 65 + 35 : player.vit * 50 + 50; }
@@ -662,68 +744,94 @@ function updateMapSelector() {
     if(mapArea) {
         mapArea.innerHTML = `<select id="map-selector" onchange="changeMap()"></select>`;
         const sel = document.getElementById('map-selector');
-        for(let i=0; i<=player.maxMapIdx; i++) {
-            let opt = document.createElement('option');
-            opt.value = i;
-            opt.innerText = maps[i].name;
-            if(player.mapIdx === i) opt.selected = true;
-            sel.appendChild(opt);
+        if(sel) {
+            for(let i=0; i<=player.maxMapIdx; i++) {
+                let opt = document.createElement('option');
+                opt.value = i;
+                opt.innerText = maps[i].name;
+                if(player.mapIdx === i) opt.selected = true;
+                sel.appendChild(opt);
+            }
         }
     }
     let mInfo = document.getElementById('map-info');
-    if(mInfo && !trial.active) {
+    if(mInfo && !trial.active && maps[player.mapIdx]) {
         let m = maps[player.mapIdx];
         mInfo.innerHTML = `EXP: ${m.baseExp} | 金: ${m.baseGold} <br><span style="color:var(--mat)">掉落: 鐵砂, ${matData[m.matId].name}</span>`;
     }
 }
 
 function updateUI() {
-    document.getElementById('p-name').innerText = player.name || "無名者"; 
-    document.getElementById('p-display-name').innerText = player.name || "無名者"; 
-    document.getElementById('p-lvl').innerText = player.lvl;
-    document.getElementById('p-path-text').innerText = pathNames[player.path]; document.getElementById('p-gold').innerText = player.gold.toLocaleString();
-    document.getElementById('p-str-val').innerText = player.str; document.getElementById('p-vit-val').innerText = player.vit; document.getElementById('p-agi-val').innerText = player.agi;
-    document.getElementById('stat-str').innerText = player.str; document.getElementById('stat-vit').innerText = player.vit; document.getElementById('stat-agi').innerText = player.agi;
-    document.getElementById('stat-points').innerText = player.statPoints;
+    let el = (id) => document.getElementById(id);
+    if(el('p-name')) el('p-name').innerText = player.name || "無名者"; 
+    if(el('p-display-name')) el('p-display-name').innerText = player.name || "無名者"; 
+    if(el('p-lvl')) el('p-lvl').innerText = player.lvl;
+    if(el('p-path-text')) el('p-path-text').innerText = pathNames[player.path]; 
+    if(el('p-gold')) el('p-gold').innerText = player.gold.toLocaleString();
+    if(el('p-str-val')) el('p-str-val').innerText = player.str; 
+    if(el('p-vit-val')) el('p-vit-val').innerText = player.vit; 
+    if(el('p-agi-val')) el('p-agi-val').innerText = player.agi;
+    if(el('stat-str')) el('stat-str').innerText = player.str; 
+    if(el('stat-vit')) el('stat-vit').innerText = player.vit; 
+    if(el('stat-agi')) el('stat-agi').innerText = player.agi;
+    if(el('stat-points')) el('stat-points').innerText = player.statPoints;
     
     ['str','vit','agi'].forEach(s => {
-        let pEl = document.getElementById(`pre-${s}`);
-        pEl.innerText = statPreview[s] > 0 ? `+${statPreview[s]}` : "";
+        let pEl = el(`pre-${s}`);
+        if(pEl) pEl.innerText = statPreview[s] > 0 ? `+${statPreview[s]}` : "";
     });
     
-    document.getElementById('alloc-btns').classList.toggle('hidden', (statPreview.str + statPreview.vit + statPreview.agi) === 0);
+    if(el('alloc-btns')) el('alloc-btns').classList.toggle('hidden', (statPreview.str + statPreview.vit + statPreview.agi) === 0);
 
-    let def = getDefPercent(player.vit); let eva = getEvaPercent(player.agi, player.path);
-    document.getElementById('det-atk').innerText = getAtkVal(); 
-    document.getElementById('det-spd').innerText = (Math.max(200, 1500 - player.agi * (player.path === 'onmyoji' ? 18 : 15)) / 1000).toFixed(2);
-    document.getElementById('det-def').innerText = def.toFixed(1); document.getElementById('det-eva').innerText = eva.toFixed(1);
+    if(el('det-atk')) el('det-atk').innerText = getAtkVal(); 
+    if(el('det-spd')) el('det-spd').innerText = (Math.max(200, 1500 - player.agi * (player.path === 'onmyoji' ? 18 : 15)) / 1000).toFixed(2);
+    if(el('det-def')) el('det-def').innerText = getDefPercent(player.vit).toFixed(1); 
+    if(el('det-eva')) el('det-eva').innerText = getEvaPercent(player.agi, player.path).toFixed(1);
 
-    document.getElementById('p-hp-bar').style.width = (player.hp / getMaxHP() * 100) + "%";
-    document.getElementById('p-hp-text').innerText = `${Math.floor(player.hp)} / ${getMaxHP()}`;
-    document.getElementById('p-exp-bar').style.width = (player.exp / player.next * 100) + "%";
-    document.getElementById('p-exp-text').innerText = `${player.exp} / ${player.next}`;
+    if(el('p-hp-bar')) el('p-hp-bar').style.width = (player.hp / getMaxHP() * 100) + "%";
+    if(el('p-hp-text')) el('p-hp-text').innerText = `${Math.floor(player.hp)} / ${getMaxHP()}`;
+    if(el('p-exp-bar')) el('p-exp-bar').style.width = (player.exp / player.next * 100) + "%";
+    if(el('p-exp-text')) el('p-exp-text').innerText = `${player.exp} / ${player.next}`;
     
     let bossTag = bossPhase2 ? " <span style='color:var(--mat); font-size:0.8em;'>[防禦姿態]</span>" : "";
-    document.getElementById('m-name').innerHTML = monster.name + bossTag;
-    document.getElementById('m-hp-bar').style.width = (monster.hp / monster.mhp * 100) + "%";
-    document.getElementById('m-hp-text').innerText = `${Math.floor(monster.hp)} / ${monster.mhp}`;
+    if(el('m-name')) el('m-name').innerHTML = monster.name + bossTag;
+    if(el('m-hp-bar')) el('m-hp-bar').style.width = (monster.hp / monster.mhp * 100) + "%";
+    if(el('m-hp-text')) el('m-hp-text').innerText = `${Math.floor(monster.hp)} / ${monster.mhp}`;
+    if(el('m-lvl')) el('m-lvl').innerText = monster.lvl;
     
     document.querySelectorAll('.btn-plus').forEach(b => b.disabled = (player.statPoints <= 0 || isReviving));
-    document.getElementById('auto-boss-check').checked = player.autoBoss;
+    if(el('auto-boss-check')) el('auto-boss-check').checked = player.autoBoss;
     
-    let pCount = document.getElementById('potion-count');
+    let pCount = el('potion-count');
     if(pCount && player.potions && player.potions[player.selectedPotion] !== undefined) {
         pCount.innerText = player.potions[player.selectedPotion];
     } else if (pCount) { pCount.innerText = 0; }
+    if(el('revive-count')) el('revive-count').innerText = player.revives;
     
+    // 📝 技能與援助 UI 刷新
+    let sName = "未解鎖"; let sCd = ""; let supName = "無";
+    if(player.subPath !== 'none' && heritageData[player.subPath]) {
+        let hData = heritageData[player.subPath];
+        sName = hData.sName;
+        sCd = combatState.skillCd > 0 ? `(${Math.ceil(combatState.skillCd)}s)` : `<span style="color:lime;">(就緒)</span>`;
+        if(hData.support) supName = hData.support;
+    }
+    if(el('skill-name')) el('skill-name').innerText = sName;
+    if(el('skill-cd')) el('skill-cd').innerHTML = sCd;
+    if(el('support-name')) el('support-name').innerText = supName;
+
     if(trial.active) {
         let trialTxt = trial.type !== 'samurai' ? `倒數: ${trial.timeLeft}s` : "死鬥";
-        document.getElementById('map-ui-area').innerHTML = `<span style='color:var(--danger); font-weight:bold;'>⛩️ 試煉中 - ${trialTxt}</span>`;
-        document.getElementById('map-info').innerHTML = ""; 
-        document.getElementById('kill-text').innerHTML = trial.type === 'onmyoji' ? `打擊數: ${trial.hits}/10` : `目標: 存活/擊敗`;
+        if(el('map-ui-area')) el('map-ui-area').innerHTML = `<span style='color:var(--danger); font-weight:bold;'>⛩️ 試煉中 - ${trialTxt}</span>`;
+        if(el('map-info')) el('map-info').innerHTML = ""; 
+        if(el('kill-text')) {
+            if(trial.type === 'onmyoji') el('kill-text').innerHTML = `打擊數: <span style="color:white">${trial.hits}/10</span>`;
+            else el('kill-text').innerHTML = `目標: 存活/擊敗`;
+        }
+        if(el('btn-boss')) el('btn-boss').disabled = true;
     } else {
-        document.getElementById('kill-text').innerHTML = `擊殺: <span id="kill-count">${player.kills}</span>/10`;
-        let mInfo = document.getElementById('map-info');
+        if(el('kill-text')) el('kill-text').innerHTML = `擊殺: <span id="kill-count">${player.kills}</span>/10`;
+        let mInfo = el('map-info');
         if(mInfo && mInfo.innerHTML === "") updateMapSelector();
     }
     
@@ -745,16 +853,19 @@ function switchView(v) {
         if(v !== 'battle') return openModal("鎖定中", "首領戰鬥或自動挑戰中，請先結束戰鬥或取消勾選。", "繼續戰鬥");
     }
     currentView = v; 
-    document.getElementById('view-battle').classList.toggle('hidden', v !== 'battle'); 
-    document.getElementById('view-village').classList.toggle('hidden', v !== 'village');
-    document.getElementById('t-battle').classList.toggle('active', v === 'battle'); 
-    document.getElementById('t-village').classList.toggle('active', v === 'village');
+    let vBat = document.getElementById('view-battle'); if(vBat) vBat.classList.toggle('hidden', v !== 'battle'); 
+    let vVil = document.getElementById('view-village'); if(vVil) vVil.classList.toggle('hidden', v !== 'village');
+    let tBat = document.getElementById('t-battle'); if(tBat) tBat.classList.toggle('active', v === 'battle'); 
+    let tVil = document.getElementById('t-village'); if(tVil) tVil.classList.toggle('active', v === 'village');
     if(v === 'battle') { isPaused = false; startBattleLoop(); } else { isPaused = true; backToVillage(); }
 }
 
 function showSubView(s) {
-    if(isResting) return; document.getElementById('village-menu').classList.add('hidden'); document.getElementById('sub-view').classList.remove('hidden');
-    const c = document.getElementById('sub-content'); c.innerHTML = "";
+    if(isResting) return; 
+    let vMenu = document.getElementById('village-menu'); if(vMenu) vMenu.classList.add('hidden'); 
+    let sView = document.getElementById('sub-view'); if(sView) sView.classList.remove('hidden');
+    const c = document.getElementById('sub-content'); if(!c) return;
+    c.innerHTML = "";
     if(s==='inn') {
         let cost = player.lvl <= 10 ? 0 : Math.min(50, player.lvl * 2);
         c.innerHTML = `<h3>🛌 旅籠屋</h3><p style="font-size:0.9em; color:#aaa;">Lv.10 以內免費，最高收費 50 金幣。</p>
@@ -767,7 +878,6 @@ function showSubView(s) {
     } else if(s==='smith') {
         renderSmithy();
     } else if(s==='gm') {
-        // 📝 V0.3.3 修復 GM 表單的 ID 同步與按鈕邏輯
         c.innerHTML = `<h3>🛠️ GM 控制台</h3>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px; text-align:left; font-size:0.9em; color:white;">
             <div>等級: <input type="number" id="gm-lvl" value="${player.lvl}" style="width:60px;"></div>
@@ -782,10 +892,10 @@ function showSubView(s) {
         <button class="btn-action" style="width:100%; margin-bottom:15px; background:var(--mat);" onclick="for(let k in player.mats) player.mats[k]+=100; log('GM: 獲得大量素材'); updateUI(); openModal('作弊成功','已獲得所有素材各 100 個！','好耶');">🎁 +100 全素材</button>
         <p style="font-size:0.9em; color:#aaa; margin-bottom:5px;">強制轉職：</p>
         <div style="display:flex; gap:5px; justify-content:center;">
-            <button onclick="player.path='samurai'; updateUI();">武士</button>
-            <button onclick="player.path='onmyoji'; updateUI();">陰陽師</button>
-            <button onclick="player.path='shinto'; updateUI();">神道教</button>
-            <button onclick="player.path='none'; updateUI();">洗白</button>
+            <button onclick="player.path='samurai'; player.subPath='none'; updateUI();">武士</button>
+            <button onclick="player.path='onmyoji'; player.subPath='none'; updateUI();">陰陽師</button>
+            <button onclick="player.path='shinto'; player.subPath='none'; updateUI();">神道教</button>
+            <button onclick="player.path='none'; player.subPath='none'; updateUI();">洗白</button>
         </div>`;
     } else if(s==='save') {
         c.innerHTML = `<h3>💾 紀錄點</h3>
@@ -801,11 +911,50 @@ function showSubView(s) {
         <button class="btn-action" style="width:100%;" onclick="buyBulkItem()">批量購買</button>`;
         updateShopInvDisplay();
     } else if(s==='path') {
-        if(player.path==='none') c.innerHTML = `<h3>⛩️ 流派覺醒</h3><div class="item-row"><div><b>天覽武道台</b><br><small>武士 (主要提升STR) | 需求: Lv.10, STR 20</small></div><button class="btn-action" onclick="tryStartTrial('samurai')">試煉</button></div>
+        renderPath();
+    }
+}
+
+// 📝 V0.3.6 流派與體系選擇渲染
+function renderPath() {
+    const c = document.getElementById('sub-content');
+    if(!c) return;
+    if(player.path === 'none') {
+        c.innerHTML = `<h3>⛩️ 流派覺醒</h3>
+        <div class="item-row"><div><b>天覽武道台</b><br><small>武士 (主要提升STR) | 需求: Lv.10, STR 20</small></div><button class="btn-action" onclick="tryStartTrial('samurai')">試煉</button></div>
         <div class="item-row"><div><b>大內陰陽寮</b><br><small>陰陽師 (主要提升AGI) | 需求: Lv.10, AGI 20</small></div><button class="btn-action" onclick="tryStartTrial('onmyoji')">試煉</button></div>
         <div class="item-row"><div><b>八百萬神殿</b><br><small>神道教 (主要提升VIT) | 需求: Lv.10, VIT 20</small></div><button class="btn-action" onclick="tryStartTrial('shinto')">試煉</button></div>`;
-        else c.innerHTML = `<h3>⛩️ ${dojoNames[player.path]}</h3><p>流派系統即將開放...</p>`;
+    } else {
+        let pName = dojoNames[player.path];
+        if(player.subPath === 'none') {
+            let opts = "";
+            if(player.path === 'samurai') opts = `<button class="btn-action" style="width:100%; margin-bottom:10px;" onclick="chooseSubPath('samurai_gou')">選擇【剛之位】(一閃爆發)</button><button class="btn-action" style="width:100%;" onclick="chooseSubPath('samurai_juu')">選擇【柔之位】(格擋反擊)</button>`;
+            if(player.path === 'onmyoji') opts = `<button class="btn-action" style="width:100%; margin-bottom:10px;" onclick="chooseSubPath('onmyoji_jutsu')">選擇【術之式】(雷法連擊)</button><button class="btn-action" style="width:100%;" onclick="chooseSubPath('onmyoji_baku')">選擇【縛之式】(禁錮與童子援助)</button>`;
+            if(player.path === 'shinto') opts = `<button class="btn-action" style="width:100%; margin-bottom:10px;" onclick="chooseSubPath('shinto_ara')">選擇【荒魂】(轉防為攻)</button><button class="btn-action" style="width:100%;" onclick="chooseSubPath('shinto_nigi')">選擇【和魂】(回血與稻荷援助)</button>`;
+            c.innerHTML = `<h3>⛩️ ${pName}</h3><p style="color:var(--gold); font-size:0.9em;">妳已獲得流派認可。請選擇未來的修行體系：</p>${opts}`;
+        } else {
+            let hd = heritageData[player.subPath];
+            c.innerHTML = `<h3>⛩️ ${pName} - ${hd.name}</h3>
+            <div style="background:#111; padding:15px; border-radius:8px; border:1px solid #333; margin-bottom:15px; text-align:left;">
+                <b style="color:var(--skill);">主動技能：${hd.sName}</b> (CD: ${hd.cd}s)<br>
+                <small style="color:#aaa;">效果：${hd.sDesc}</small><br>
+                ${hd.support ? `<br><b style="color:var(--accent);">援助角色：${hd.support}</b><br><small style="color:#aaa;">效果：自動攻擊敵人</small>` : ''}
+            </div>
+            <button class="btn-action" style="width:100%; background:#e67e22;" onclick="resetSubPath()">🔄 重置體系 (花費 500 金幣)</button>`;
+        }
     }
+}
+
+function chooseSubPath(sp) {
+    player.subPath = sp; resetCombatState(); updateUI(); renderPath(); log(`⛩️ 妳選擇了【${heritageData[sp].name}】體系！`, "var(--quest)");
+}
+
+function resetSubPath() {
+    if(player.gold >= 500) {
+        openModal("🔄 重置確認", "確定要花費 500 金幣遺忘當前體系嗎？", "確定", () => {
+            player.gold -= 500; player.subPath = 'none'; resetCombatState(); updateUI(); renderPath(); log("🔄 體系已重置。", "var(--accent)");
+        }, true);
+    } else { openModal("金幣不足", "重置體系需要 500 金幣。", "知道了"); }
 }
 
 function applyGM() {
@@ -818,7 +967,7 @@ function applyGM() {
     player.lockedStats = { str: player.str, vit: player.vit, agi: player.agi };
     player.hp = getMaxHP();
     updateUI();
-    showSubView('gm'); // 📝 重新渲染 GM 介面以確認數值已寫入
+    showSubView('gm'); 
     log('🛠️ GM 數值已套用！', 'var(--gm)');
 }
 
@@ -834,6 +983,7 @@ function getUpgradeCost(level) {
 
 function renderSmithy() {
     const c = document.getElementById('sub-content');
+    if(!c) return;
     let invHtml = `<div style="text-align:left; font-size:0.85em; color:#aaa; margin-bottom:15px;">
         <span style="color:var(--gold);">💰 ${player.gold}</span> | <span style="color:#aaa;">⚙️ 鐵砂: ${player.mats.m0}</span><br>
         🌿 竹皮: ${player.mats.m1} | 🪵 木片: ${player.mats.m2} | ☂️ 破傘: ${player.mats.m3} | ⚡ 碎核: ${player.mats.m4}
@@ -891,6 +1041,7 @@ function upgradeGear(gid) {
 
 function renderSellMats() {
     const c = document.getElementById('sub-content');
+    if(!c) return;
     let invHtml = `<div style="text-align:left; font-size:0.85em; color:#aaa; margin-bottom:15px;">
         <span style="color:var(--gold);">💰 目前持有金幣: ${player.gold}</span>
     </div>`;
@@ -941,11 +1092,19 @@ function saveGameWithFeedback() {
 function innRest(cost) {
     if(player.hp >= getMaxHP()) return openModal("精神飽滿", "老闆看了看妳：「妳精神好得很，別來搗亂，快去打怪！」", "知道了");
     if(player.gold >= cost) {
-        player.gold -= cost; isResting = true; document.getElementById('btn-back-village').disabled = true;
-        let sec = 5; const area = document.getElementById('btn-inn-rest'); area.disabled = true;
+        player.gold -= cost; isResting = true; 
+        let backBtn = document.getElementById('btn-back-village'); if(backBtn) backBtn.disabled = true;
+        let area = document.getElementById('btn-inn-rest'); if(area) area.disabled = true;
+        let sec = 5; 
         const timer = setInterval(() => {
-            sec--; area.innerText = `💤 休息中... ${sec}`;
-            if(sec <= 0) { clearInterval(timer); isResting = false; document.getElementById('btn-back-village').disabled = false; player.hp = getMaxHP(); updateUI(); area.innerText = "休息完畢"; openModal("✨ 休息完畢", "妳感到神清氣爽，體力已完全恢復！", "出發", () => showSubView('inn')); }
+            sec--; if(area) area.innerText = `💤 休息中... ${sec}`;
+            if(sec <= 0) { 
+                clearInterval(timer); isResting = false; 
+                if(backBtn) backBtn.disabled = false; 
+                player.hp = getMaxHP(); updateUI(); 
+                if(area) area.innerText = "休息完畢"; 
+                openModal("✨ 休息完畢", "妳感到神清氣爽，體力已完全恢復！", "出發", () => showSubView('inn')); 
+            }
         }, 1000);
     } else openModal("金幣不足", "客棧老闆無奈地搖了搖頭，請回吧。", "知道了");
 }
@@ -984,24 +1143,46 @@ function buyBulkItem() {
     }
 }
 
-function backToVillage() { document.getElementById('sub-view').classList.add('hidden'); document.getElementById('village-menu').classList.remove('hidden'); }
+function backToVillage() { 
+    let sv = document.getElementById('sub-view'); if(sv) sv.classList.add('hidden'); 
+    let vm = document.getElementById('village-menu'); if(vm) vm.classList.remove('hidden'); 
+}
 function changeMap() { 
     const sel = document.getElementById('map-selector');
     if(!sel) return;
     player.mapIdx = parseInt(sel.value); player.kills=0; monster.hp = 0; spawn(); updateMapSelector(); 
 }
 function manualBoss() { spawn(true); }
-function showDmg(tid, txt, col) { const b = document.getElementById(tid); if(!b) return; const e = document.createElement('div'); e.className='dmg-text'; e.innerText=txt; e.style.color=col; b.appendChild(e); setTimeout(()=>e.remove(), 800); }
-function log(m, color = "#888") { const l = document.getElementById('log'); l.innerHTML = `<span style="color:${color}">> ${m}</span><br>` + l.innerHTML; }
+function showDmg(tid, txt, col) { 
+    const b = document.getElementById(tid); if(!b) return; 
+    const e = document.createElement('div'); e.className='dmg-text'; e.innerText=txt; e.style.color=col; 
+    b.appendChild(e); setTimeout(()=>e.remove(), 800); 
+}
+function log(m, color = "#888") { 
+    const l = document.getElementById('log'); 
+    if(l) l.innerHTML = `<span style="color:${color}">> ${m}</span><br>` + l.innerHTML; 
+}
 
 function openModal(t,b,bt,cb,showCancel=false) { 
-    isPaused=true; document.getElementById('modal-title').innerText=t; document.getElementById('modal-body').innerHTML=b;
-    const btn=document.getElementById('modal-confirm-btn'); btn.innerText=bt;
-    const cBtn=document.getElementById('modal-cancel-btn'); cBtn.style.display=showCancel?'block':'none';
-    let isMainMenu = !document.getElementById('slot-screen').classList.contains('hidden');
-    btn.onclick=()=>{ if(cb && cb() === false) return; document.getElementById('game-modal').style.display='none'; if(!isMainMenu) { isPaused=false; if(currentView==='battle') startBattleLoop(); } };
-    cBtn.onclick=()=>{ document.getElementById('game-modal').style.display='none'; if(!isMainMenu) { isPaused=false; if(currentView==='battle') startBattleLoop(); } };
-    document.getElementById('game-modal').style.display='flex'; 
+    isPaused=true; 
+    let titleEl = document.getElementById('modal-title'); if(titleEl) titleEl.innerText=t; 
+    let bodyEl = document.getElementById('modal-body'); if(bodyEl) bodyEl.innerHTML=b;
+    const btn=document.getElementById('modal-confirm-btn'); if(btn) btn.innerText=bt;
+    const cBtn=document.getElementById('modal-cancel-btn'); if(cBtn) cBtn.style.display=showCancel?'block':'none';
+    let isMainMenu = false;
+    let slotScreen = document.getElementById('slot-screen');
+    if(slotScreen) isMainMenu = !slotScreen.classList.contains('hidden');
+    
+    if(btn) btn.onclick=()=>{ 
+        if(cb && cb() === false) return; 
+        let gm = document.getElementById('game-modal'); if(gm) gm.style.display='none'; 
+        if(!isMainMenu) { isPaused=false; if(currentView==='battle') startBattleLoop(); } 
+    };
+    if(cBtn) cBtn.onclick=()=>{ 
+        let gm = document.getElementById('game-modal'); if(gm) gm.style.display='none'; 
+        if(!isMainMenu) { isPaused=false; if(currentView==='battle') startBattleLoop(); } 
+    };
+    let gm = document.getElementById('game-modal'); if(gm) gm.style.display='flex'; 
 }
 
 window.onload = () => { initSlotScreen(); setInterval(() => { if(!isPaused && currentSlotKey && player.name) saveGame(false); }, 5000); };
