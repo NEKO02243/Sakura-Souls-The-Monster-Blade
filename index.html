@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>永夜之境：宗師歸來 V0.2.4 (Stable)</title>
+    <title>永夜之境：宗師歸來 V0.2.4 (Hotfix)</title>
     <style>
         :root { --bg: #0a0a0f; --panel: #161622; --gold: #ffd700; --cherry: #ffb7c5; --accent: #70a1ff; --quest: #55efc4; --danger: #ff4757; --gm: #00cec9; }
         body { background: var(--bg); color: #e0e0e0; font-family: 'PingFang TC', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 0; margin: 0; overflow-x: hidden; }
@@ -118,7 +118,7 @@
 <div id="slot-screen">
     <div style="text-align: center; margin-bottom: 30px;">
         <h1 style="color:var(--cherry); margin-bottom: 5px;">⛩️ 永夜之境 ⛩️</h1>
-        <small style="color: #666; letter-spacing: 2px;">宗師歸來 V0.2.4 (Stable)</small>
+        <small style="color: #666; letter-spacing: 2px;">宗師歸來 V0.2.4 (Hotfix)</small>
     </div>
     <div id="slots-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
     <div style="margin-top: 30px; font-size: 0.85em; color: #888; text-align: center; line-height: 1.5;">
@@ -252,7 +252,7 @@
 
 <script>
 /* ==========================================================================
-⛩️ 《永夜之境：宗師歸來》 核心設定 V0.2.4 (Stable)
+⛩️ 《永夜之境：宗師歸來》 核心設定 V0.2.4 (Hotfix)
 ========================================================================== */
 
 const pathNames = { none: '流浪者', samurai: '武士', onmyoji: '陰陽師', shinto: '神道教' };
@@ -283,7 +283,7 @@ const defaultPlayer = {
     potions: { p1: 5, p2: 0, p3: 0, p4: 0 }, 
     selectedPotion: 'p1', autoHeal: 0, autoHealEnabled: false
 };
-// 📝 確保藥水等物件在深拷貝時完全獨立
+
 let player = JSON.parse(JSON.stringify(defaultPlayer));
 let monster = { name: "", hp: 0, mhp: 0, atk: 0, lvl: 1, isBoss: false };
 let isPaused = true;
@@ -350,7 +350,6 @@ function loadGame() {
     let s = localStorage.getItem(currentSlotKey); 
     if(s) {
         let sd = JSON.parse(s); 
-        // 📝 防止舊存檔覆蓋掉預設藥水物件結構
         if(!sd.potions || typeof sd.potions !== 'object') sd.potions = { p1: 5, p2: 0, p3: 0, p4: 0 };
         Object.assign(player, sd);
         
@@ -360,7 +359,6 @@ function loadGame() {
         if(!player.lockedStats) player.lockedStats = { str: player.str, vit: player.vit, agi: player.agi };
         if(player.lvl === 1 && player.exp < 30 && player.next === 100) player.next = 30;
     } else {
-        // 確保新開局完全套用預設值
         player = JSON.parse(JSON.stringify(defaultPlayer));
     }
     
@@ -371,7 +369,7 @@ function loadGame() {
         resetInitStats();
         openModal("踏入輪迴", "名號一旦定下，便與靈魂綁定。請確認好您的修行天賦：", "開啟旅程", () => { 
             let n = document.getElementById('player-name-input').value.trim();
-            if(n === "") n = "無名者"; // 📝 修復無名者判定
+            if(n === "") n = "無名者"; 
             if(player.statPoints > 0) { alert("請先分配完所有初始點數！"); return false; }
             
             player.name = n; 
@@ -392,7 +390,7 @@ function loadGame() {
 function postLoadInit() { 
     updateMapSelector(); spawn(false); updateUI(); isPaused = false; 
     
-    log("💡 【版本廣播】V0.2.4 已更新。修復無名者與藥水系統。", "var(--accent)");
+    log("💡 【版本廣播】V0.2.4 (Hotfix) 已更新。修復試煉計時顯示與歸零問題。", "var(--accent)");
     if(player.lvl === 1 && player.exp === 0 && player.gold === 0 && player.potions.p1 === 5) {
         log("🎁 新手物資已發放：薄濁之水 x5", "var(--quest)");
     }
@@ -422,7 +420,6 @@ function promptImportCode() {
 
 function initPotionSelect() {
     const sel = document.getElementById('potion-select'); sel.innerHTML = "";
-    // 📝 安全檢查
     if(!player.potions) player.potions = { p1: 5, p2: 0, p3: 0, p4: 0 };
     
     for(let k in potionData) {
@@ -467,18 +464,24 @@ function tryStartTrial(type) {
     if(player.lvl < 10 || player[req.stat] < req.val) return openModal("⚠️ 資格不足", `妳的修為尚淺。需要 Lv.10 且 ${req.stat.toUpperCase()} 達到 ${req.val}。`, "知道了");
     let story = "";
     if(type === 'samurai') story = "<b>【門生】助六</b> 抹了把汗道：「嘿！我是助六。<b>【家老】鐵</b>交代過武道台不收弱者。去擊敗那隻浪人，證明實力吧！」";
-    else if(type === 'onmyoji') story = "<b>【生員】螢</b> 冷冷地說：「我是螢。<b>【寮頭】湊</b>正在處理靈災，十秒內淨化靈體十五次，這是基本門檻。」";
-    else if(type === 'shinto') story = "<b>【巫女】小梅</b> 笑道：「我是小梅。<b>【齋主】靜</b>大人在忙，請撐過鬼王幻影 20 秒，展現妳的意志！」";
+    else if(type === 'onmyoji') story = "<b>【生員】螢</b> 冷冷地說：「我是螢。<b>【寮頭】湊</b>正在處理靈災，十秒內淨化靈體十次，這是基本門檻。」";
+    else if(type === 'shinto') story = "<b>【巫女】小梅</b> 笑道：「我是小梅。<b>【齋主】靜</b>大人在忙，請撐過鬼王幻影 30 秒，展現妳的意志！」";
     openModal(`⛩️ 入門試煉：${pathNames[type]}`, story, "接受挑戰", () => beginTrial(type), true);
 }
 
 function beginTrial(type) {
-    trial = { active: true, type: type, progress: 0, timeLeft: type === 'onmyoji' ? 10 : 20, timer: null, healTimer: null, bossTimer: null, hits: 0 };
+    let duration = type === 'onmyoji' ? 10 : (type === 'shinto' ? 30 : 20);
+    trial = { active: true, type: type, progress: 0, timeLeft: duration, timer: null, healTimer: null, bossTimer: null, hits: 0 };
     player.kills = 0; switchView('battle');
+    
     trial.timer = setInterval(() => {
         trial.timeLeft--; updateUI();
-        if(trial.timeLeft <= 0) { if(trial.type === 'shinto') endTrial(true); else endTrial(false); }
+        if(trial.timeLeft <= 0) { 
+            if(trial.type === 'shinto') endTrial(true); 
+            else endTrial(false); 
+        }
     }, 1000);
+    
     if(type === 'shinto') {
         trial.bossTimer = setInterval(() => { player.hp -= 500; showDmg('p-box', 500, 'red'); if(player.hp <= 0) endTrial(false); updateUI(); }, 3000);
         trial.healTimer = setInterval(() => { let h = Math.floor(getMaxHP() * 0.6); player.hp = Math.min(getMaxHP(), player.hp + h); showDmg('p-box', `庇護 +${h}`, 'lime'); updateUI(); }, 5000);
@@ -495,6 +498,10 @@ function spawnTrialMonster() {
 
 function endTrial(success) {
     clearInterval(trial.timer); clearInterval(trial.healTimer); clearInterval(trial.bossTimer); trial.active = false;
+    
+    // 📝 試煉結束後重置擊殺文字 UI
+    document.getElementById('kill-text').innerHTML = `擊殺: <span id="kill-count">0</span>/10`;
+
     if (success) {
         let msg = trial.type === 'samurai' ? "<b>【門生】助六</b> 大笑：「好！妳就是天覽武道台的一員了！」" : trial.type === 'onmyoji' ? "<b>【生員】螢</b> 點頭：「合格了。去向寮頭報到吧。」" : "<b>【巫女】小梅</b> 拍手：「太好了！歡迎來到八百萬神殿！」";
         player.path = trial.type; openModal("✨ 覺醒成功", msg, "接受力量");
@@ -520,8 +527,15 @@ function startBattleLoop() {
     let pDmg = Math.floor(player.str * (player.path === 'samurai' ? 2.0 : 1.5));
     let crit = Math.min(80, 5 + (player.path === 'samurai' ? player.str * 0.15 : 0));
     let isCrit = Math.random() * 100 < crit; if(isCrit) pDmg = Math.floor(pDmg * 1.5);
-    if(trial.active && trial.type === 'onmyoji') { trial.hits++; showDmg('m-box', pDmg, isCrit?'orange':'white'); if(trial.hits >= 15) { endTrial(true); return; } }
+    
+    if(trial.active && trial.type === 'onmyoji') { 
+        trial.hits++; 
+        showDmg('m-box', pDmg, isCrit?'orange':'white'); 
+        document.getElementById('kill-text').innerHTML = `打擊數: <span style="color:white">${trial.hits}/10</span>`;
+        if(trial.hits >= 10) { endTrial(true); return; } 
+    }
     else { monster.hp -= pDmg; showDmg('m-box', pDmg + (isCrit?"!!":""), isCrit?'orange':'white'); }
+    
     if(monster.hp <= 0 && (!trial.active || trial.type !== 'onmyoji')) handleVictory();
     else {
         let eva = getEvaPercent(player.agi, player.path);
@@ -621,11 +635,25 @@ function updateUI() {
     document.querySelectorAll('.btn-plus').forEach(b => b.disabled = (player.statPoints <= 0 || isReviving));
     document.getElementById('auto-boss-check').checked = player.autoBoss;
     
-    // 📝 藥水顯示防呆
     let pCount = document.getElementById('potion-count');
     if(pCount && player.potions && player.potions[player.selectedPotion] !== undefined) {
         pCount.innerText = player.potions[player.selectedPotion];
     } else if (pCount) { pCount.innerText = 0; }
+    
+    // 📝 V0.2.4 試煉 UI 計時器顯示邏輯
+    if(trial.active) {
+        let trialTxt = `倒數: ${trial.timeLeft}s`;
+        document.getElementById('map-ui-area').innerHTML = `<span style='color:var(--danger); font-weight:bold;'>⛩️ 試煉中 - ${trialTxt}</span>`;
+        if(trial.type === 'samurai') document.getElementById('kill-text').innerHTML = `目標: 擊敗浪人`;
+        if(trial.type === 'shinto') document.getElementById('kill-text').innerHTML = `目標: 存活`;
+        document.getElementById('btn-boss').disabled = true;
+    } else {
+        if(!document.getElementById('map-selector')) {
+            document.getElementById('map-ui-area').innerHTML = `<select id="map-selector" onchange="changeMap()"></select>`;
+            updateMapSelector();
+        }
+        document.getElementById('kill-text').innerHTML = `擊殺: <span id="kill-count">${player.kills}</span>/10`;
+    }
     
     updateVillageMenuCard();
 }
@@ -673,7 +701,11 @@ function showSubView(s) {
     if(s==='inn') {
         let cost = player.lvl <= 10 ? 0 : Math.min(50, player.lvl * 2);
         c.innerHTML = `<h3>🛌 旅籠屋</h3><p style="font-size:0.9em; color:#aaa;">Lv.10 以內免費，最高收費 50 金幣。</p>
-        <p>持有金幣：${player.gold} | 休息費用：${cost === 0 ? '<span style="color:var(--quest)">免費</span>' : cost}</p>
+        <div style="background:#111; padding:15px; border-radius:8px; border:1px solid #333; margin: 15px 0;">
+            <p style="margin:5px 0;">目前體力：<span style="color: ${player.hp < getMaxHP() ? 'var(--danger)' : 'var(--quest)'}; font-weight:bold;">${Math.floor(player.hp)}</span> / ${getMaxHP()}</p>
+            <p style="margin:5px 0;">持有金幣：<span style="color:var(--gold);">${player.gold}</span></p>
+        </div>
+        <p>休息費用：${cost === 0 ? '<span style="color:var(--quest)">免費</span>' : cost + ' 金幣'}</p>
         <button class="btn-action" style="width:100%;" id="btn-inn-rest" onclick="innRest(${cost})">入內休息 (5秒)</button>`;
     } else if(s==='gm') {
         c.innerHTML = `<h3>🛠️ GM 控制台</h3>
