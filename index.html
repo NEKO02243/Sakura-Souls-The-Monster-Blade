@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>永夜之境：宗師歸來 V0.2.2 (TEST)</title>
+    <title>永夜之境：宗師歸來 V0.2.2 (策略初現)</title>
     <style>
         :root { --bg: #0a0a0f; --panel: #161622; --gold: #ffd700; --cherry: #ffb7c5; --accent: #70a1ff; --quest: #55efc4; --danger: #ff4757; --gm: #00cec9; --mat: #e1b12c; --skill: #9b59b6; --passive: #f39c12; }
         body { background: var(--bg); color: #e0e0e0; font-family: 'PingFang TC', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 0; margin: 0; overflow-x: hidden; }
@@ -410,7 +410,7 @@ function loadGame() {
 
 function postLoadInit() { 
     updateMapSelector(); spawn(false); updateUI(); isPaused = false; 
-    log("💡 【V0.2.2 策略版】：HP壓縮戰鬥加速，技能策略引擎已啟動！", "var(--accent)");
+    log("💡 【V0.2.2 更新公告】：技能功能重新設計，新增木樁掛機練功功能，無傷安心掛機", "var(--accent)");
     if(player.lvl === 1 && player.exp === 0 && player.gold === 0 && player.potions.p1 === 5) {
         log("🎁 新手物資已發放：薄濁之水 x5", "var(--quest)");
     }
