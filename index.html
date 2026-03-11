@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>永夜之境：宗師歸來 V0.1.9 (Test)</title>
+    <title>永夜之境：宗師歸來 V0.2.2 (Stable)</title>
     <style>
         :root { --bg: #0a0a0f; --panel: #161622; --gold: #ffd700; --cherry: #ffb7c5; --accent: #70a1ff; --quest: #55efc4; --danger: #ff4757; --gm: #00cec9; }
         body { background: var(--bg); color: #e0e0e0; font-family: 'PingFang TC', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 0; margin: 0; overflow-x: hidden; }
@@ -37,15 +37,15 @@
         .stat-row { text-align: center; }
         .stat-label { font-size: 0.8em; color: #aaa; margin-bottom: 5px; }
         .stat-val { font-size: 1.2em; font-weight: bold; color: var(--gold); transition: color 0.3s; margin: 0 10px; display: inline-block; min-width: 25px; }
-        .btn-plus { width: 25px; height: 25px; border-radius: 50%; border: 1px solid var(--cherry); background: none; color: var(--cherry); cursor: pointer; font-weight: bold; margin-top: 5px; }
-        .btn-minus { width: 25px; height: 25px; border-radius: 50%; border: 1px solid #70a1ff; background: none; color: #70a1ff; cursor: pointer; font-weight: bold; margin-top: 5px; }
-        .btn-plus:disabled, .btn-minus:disabled { border-color: #444; color: #444; cursor: not-allowed; }
+        .preview-val { color: #2ecc71; font-size: 0.9em; margin-left: 2px; }
+        .btn-plus { width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--cherry); background: none; color: var(--cherry); cursor: pointer; font-weight: bold; margin-top: 5px; font-size: 1.2em; }
+        .btn-plus:disabled { border-color: #444; color: #444; cursor: not-allowed; opacity: 0.5; }
 
         @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-40px); opacity: 0; } }
         .dmg-text { position: absolute; width: 100%; text-align: center; font-weight: bold; font-size: 1.3em; animation: floatUp 0.8s forwards; pointer-events: none; z-index: 100; text-shadow: 1px 1px 2px black; }
 
         .btn-action { padding: 8px 15px; background: var(--cherry); border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: black; transition: 0.2s; }
-        .btn-action:disabled { background: #444; color: #888 !important; cursor: not-allowed; }
+        .btn-action:disabled { background: #444 !important; color: #888 !important; cursor: not-allowed; opacity: 0.7; }
         .btn-action:active { transform: scale(0.95); }
         
         .item-row { background: #222; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--accent); margin-bottom: 8px; }
@@ -54,6 +54,7 @@
         .modal-content { background: #1c1c28; border: 2px solid var(--cherry); border-radius: 12px; padding: 30px; text-align: center; max-width: 450px; width: 90%; box-shadow: 0 0 20px rgba(255,183,197,0.2); }
         .tab-btn { padding: 12px; background: #222; color: #888; border: none; cursor: pointer; flex: 1; font-weight: bold; }
         .tab-btn.active { background: var(--panel); color: var(--cherry); border-top: 2px solid var(--cherry); }
+        .tab-btn:disabled { opacity: 0.5; cursor: not-allowed; color: #444; }
         select, input[type="number"], textarea { background: #000; color: var(--gold); border: 1px solid var(--cherry); padding: 5px; border-radius: 5px; cursor: pointer; outline: none; text-align: center; }
         
         #naming-stat-alloc { background: #111; padding: 10px; border-radius: 8px; margin-top: 15px; border: 1px solid #333; }
@@ -73,39 +74,37 @@
         <div id="modal-body" style="margin: 20px 0; line-height: 1.6; color:#ddd; font-size:0.95em;"></div>
         
         <div id="naming-area" class="hidden">
-            <input type="text" id="player-name-input" placeholder="請輸入妳的名號 (留白將成為無名者)" style="padding:10px; text-align:center; background:#000; color:white; border:1px solid var(--cherry); width:80%; font-size:1.1em; margin-bottom:10px;">
+            <input type="text" id="player-name-input" placeholder="請輸入妳的名號 (留白為無名者)" style="padding:10px; text-align:center; background:#000; color:white; border:1px solid var(--cherry); width:80%; font-size:1.1em; margin-bottom:10px;">
             <div id="naming-stat-alloc">
                 <p style="color:var(--gold); margin:5px 0; font-weight:bold;">修行初載：分配初始 5 點能力</p>
                 <div class="stat-alloc-grid" style="padding:10px; margin-top:0; background:transparent;">
                     <div class="stat-row">
                         <span style="font-size:0.85em; color:white;">力量</span><br>
                         <div>
-                            <button class="btn-minus" onclick="allocInitStat('str', -1)">-</button>
+                            <button class="btn-plus" onclick="allocInitStat('str', 1)">+</button><br>
                             <b id="init-str" class="stat-val">2</b>
-                            <button class="btn-plus" onclick="allocInitStat('str', 1)">+</button>
                         </div>
                         <span class="hint">提升斬擊威力<br>追求極致傷害</span>
                     </div>
                     <div class="stat-row">
                         <span style="font-size:0.85em; color:white;">體質</span><br>
                         <div>
-                            <button class="btn-minus" onclick="allocInitStat('vit', -1)">-</button>
+                            <button class="btn-plus" onclick="allocInitStat('vit', 1)">+</button><br>
                             <b id="init-vit" class="stat-val">1</b>
-                            <button class="btn-plus" onclick="allocInitStat('vit', 1)">+</button>
                         </div>
                         <span class="hint">強化身法體魄<br>提升生命減傷</span>
                     </div>
                     <div class="stat-row">
                         <span style="font-size:0.85em; color:white;">敏捷</span><br>
                         <div>
-                            <button class="btn-minus" onclick="allocInitStat('agi', -1)">-</button>
+                            <button class="btn-plus" onclick="allocInitStat('agi', 1)">+</button><br>
                             <b id="init-agi" class="stat-val">0</b>
-                            <button class="btn-plus" onclick="allocInitStat('agi', 1)">+</button>
                         </div>
                         <span class="hint">精進反應速度<br>掌握先機閃避</span>
                     </div>
                 </div>
-                <p style="font-size:0.85em; color:var(--cherry); margin-bottom:0;">剩餘點數：<span id="init-points" style="font-size:1.2em; font-weight:bold;">5</span></p>
+                <p style="font-size:0.85em; color:var(--cherry); margin-bottom:5px;">剩餘點數：<span id="init-points" style="font-size:1.2em; font-weight:bold;">5</span></p>
+                <button class="btn-action" style="font-size:0.8em; background:#444; color:white;" onclick="resetInitStats()">重填</button>
             </div>
         </div>
 
@@ -119,11 +118,9 @@
 <div id="slot-screen">
     <div style="text-align: center; margin-bottom: 30px;">
         <h1 style="color:var(--cherry); margin-bottom: 5px;">⛩️ 永夜之境 ⛩️</h1>
-        <small style="color: #666; letter-spacing: 2px;">宗師歸來 V0.1.9 (Test)</small>
+        <small style="color: #666; letter-spacing: 2px;">宗師歸來 V0.2.2 (Stable)</small>
     </div>
-    
     <div id="slots-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
-    
     <div style="margin-top: 30px; font-size: 0.85em; color: #888; text-align: center; line-height: 1.5;">
         * 本遊戲每 5 秒鐘自動存檔<br>
         預防紀錄不見可以自行至結界之里手動存檔
@@ -186,15 +183,18 @@
                 <button class="btn-action" style="padding:4px 10px; font-size:0.9em;" onclick="usePotion(true)">手動</button>
             </div>
             <div class="prep-controls">
-                <span title="當血量低於此百分比時自動吃藥">自動補血: <span style="font-size:0.8em; color:#aaa;">&lt;</span> </span>
+                <label style="color:#aaa; font-size:0.85em; cursor:pointer; display:flex; align-items:center; gap:3px;">
+                    <input type="checkbox" id="auto-heal-check" onchange="player.autoHealEnabled = this.checked;"> 自動補血
+                </label>
+                <span style="font-size:0.8em; color:#aaa;">&lt;</span>
                 <input type="number" id="auto-heal-input" value="0" min="0" max="99" style="width:40px;" onchange="updateAutoHeal(this.value)"> <span style="color:#aaa">%</span>
             </div>
         </div>
 
         <div style="text-align:center; margin-bottom:10px; display:flex; justify-content:center; align-items:center; gap:15px;">
             <button id="btn-boss" onclick="manualBoss()" disabled class="btn-action" style="background:#ff4757; color:white;">⚔️ 挑戰 BOSS</button>
-            <label style="color:var(--danger); font-size: 0.9em; cursor: pointer;">
-                <input type="checkbox" id="auto-boss-check" onchange="player.autoBoss = this.checked;"> 自動挑戰
+            <label style="color:var(--danger); font-size: 0.9em; cursor: pointer; display:flex; align-items:center; gap:3px;">
+                <input type="checkbox" id="auto-boss-check" onchange="player.autoBoss = this.checked; updateUI();"> 自動挑戰
             </label>
             <span style="color:#aaa; font-size:0.9em; border-left:1px solid #444; padding-left:15px;">🛡️ 御守: <span id="revive-count" style="color:var(--gold);">0</span></span>
         </div>
@@ -202,21 +202,18 @@
         <div class="stat-alloc-grid">
             <div class="stat-row">
                 <div class="stat-label">力量(STR)</div>
-                <button class="btn-minus" onclick="allocStat('str', -1)">-</button>
-                <span id="stat-str" class="stat-val">0</span>
-                <button class="btn-plus" onclick="allocStat('str', 1)">+</button>
+                <button class="btn-plus" onclick="previewStat('str')">+</button><br>
+                <span id="stat-str" class="stat-val">0</span><span id="pre-str" class="preview-val"></span>
             </div>
             <div class="stat-row">
                 <div class="stat-label">體質(VIT)</div>
-                <button class="btn-minus" onclick="allocStat('vit', -1)">-</button>
-                <span id="stat-vit" class="stat-val">0</span>
-                <button class="btn-plus" onclick="allocStat('vit', 1)">+</button>
+                <button class="btn-plus" onclick="previewStat('vit')">+</button><br>
+                <span id="stat-vit" class="stat-val">0</span><span id="pre-vit" class="preview-val"></span>
             </div>
             <div class="stat-row">
                 <div class="stat-label">敏捷(AGI)</div>
-                <button class="btn-minus" onclick="allocStat('agi', -1)">-</button>
-                <span id="stat-agi" class="stat-val">0</span>
-                <button class="btn-plus" onclick="allocStat('agi', 1)">+</button>
+                <button class="btn-plus" onclick="previewStat('agi')">+</button><br>
+                <span id="stat-agi" class="stat-val">0</span><span id="pre-agi" class="preview-val"></span>
             </div>
         </div>
         
@@ -228,8 +225,11 @@
         </div>
 
         <div style="text-align:center; margin-top:10px;">
-            <span style="font-size:0.9em; color:var(--gold);">剩餘屬性點：<span id="stat-points">0</span></span>
-            <button id="btn-lock-stats" class="btn-action" style="padding:4px 10px; font-size:0.8em; margin-left:10px; display:none;" onclick="lockStats()">確認配點</button>
+            <span style="font-size:0.9em; color:var(--gold);">剩餘點數：<span id="stat-points">0</span></span><br>
+            <div id="alloc-btns" class="hidden" style="margin-top:10px; display:flex; justify-content:center; gap:10px;">
+                <button class="btn-action" style="background:#444; color:white; padding:4px 12px;" onclick="cancelPreview()">取消預覽</button>
+                <button class="btn-action" style="background:var(--quest); color:black; padding:4px 12px;" onclick="confirmStats()">確定配點</button>
+            </div>
         </div>
         <div id="log" style="height: 100px; margin-top:15px; overflow-y:auto; background:#000; padding:10px; border-radius:8px; font-size:12px; color:#888; border:1px solid #222;"></div>
     </div>
@@ -240,13 +240,11 @@
             <div class="slot-card" style="width:auto; margin:0;" onclick="showSubView('inn')"><h3 style="color:var(--accent); margin:5px 0;">🛌 旅籠屋</h3><p style="margin:0; font-size:0.8em; color:#aaa;">休息恢復體力</p></div>
             <div class="slot-card" style="width:auto; margin:0;" onclick="showSubView('shop')"><h3 style="color:var(--cherry); margin:5px 0;">🏮 萬屋</h3><p style="margin:0; font-size:0.8em; color:#aaa;">購買藥水補給</p></div>
             <div class="slot-card" style="width:auto; margin:0;" onclick="showSubView('save')"><h3 style="color:var(--cherry); margin:5px 0;">💾 紀錄點</h3><p style="margin:0; font-size:0.8em; color:#aaa;">存檔與引繼</p></div>
-            
             <div class="slot-card hidden" id="card-gm" style="width:auto; margin:0; border-color:var(--gm);" onclick="showSubView('gm')"><h3 style="color:var(--gm); margin:5px 0;">🛠️ 神明特權</h3><p style="margin:0; font-size:0.8em; color:#aaa;">控制台</p></div>
-            
             <div class="slot-card" style="width:auto; margin:0; border-color:#555;" onclick="location.reload()"><h3 style="color:#888; margin:5px 0;">🌀 登出</h3><p style="margin:0; font-size:0.8em; color:#aaa;">世界線跳轉</p></div>
         </div>
         <div id="sub-view" class="hidden" style="margin-top:20px;">
-            <button class="btn-action" onclick="backToVillage()" style="background:#444; color:white; margin-bottom:15px;">← 返回</button>
+            <button id="btn-back-village" class="btn-action" onclick="backToVillage()" style="background:#444; color:white; margin-bottom:15px;">← 返回</button>
             <div id="sub-content"></div>
         </div>
     </div>
@@ -254,11 +252,11 @@
 
 <script>
 /* ==========================================================================
-⛩️ 《永夜之境：宗師歸來》 核心設定 V0.1.9 (Test)
+⛩️ 《永夜之境：宗師歸來》 核心設定 V0.2.2 (Stable)
 ========================================================================== */
 
 const pathNames = { none: '流浪者', samurai: '武士', onmyoji: '陰陽師', shinto: '神道教' };
-const dojoNames = { samurai: '【家老】鐵 的武道台', onmyoji: '【寮頭】湊 的陰陽寮', shinto: '【齋主】靜 的神殿' };
+const dojoNames = { samurai: '天覽武道台', onmyoji: '大內陰陽寮', shinto: '八百萬神殿' };
 
 const maps = [
     { name: "遺忘的竹林", mobs: ["迷途犬", "竹林小鬼"], boss: "荒廢石獅子", baseExp: 10, baseGold: 5, baseAtk: 5, bossAtk: 20, dropRate: 0.01 },
@@ -277,13 +275,13 @@ const potionData = {
 let currentSlotKey = "";
 
 const defaultPlayer = {
-    name: "", lvl: 1, exp: 0, next: 100, gold: 0, 
+    name: "", lvl: 1, exp: 0, next: 30, gold: 0, 
     str: 2, vit: 1, agi: 0, statPoints: 5, 
     lockedStats: { str: 2, vit: 1, agi: 0 },
     hp: 100, mhp: 100, mapIdx: 0, maxMapIdx: 0, kills: 0, path: 'none', 
     autoBoss: false, revives: 0, lastSaveTime: Date.now(),
     potions: { p1: 5, p2: 0, p3: 0, p4: 0 }, 
-    selectedPotion: 'p1', autoHeal: 0
+    selectedPotion: 'p1', autoHeal: 0, autoHealEnabled: false
 };
 let player = JSON.parse(JSON.stringify(defaultPlayer));
 let monster = { name: "", hp: 0, mhp: 0, atk: 0, lvl: 1, isBoss: false };
@@ -295,6 +293,9 @@ let battleTimer = null;
 let trial = { active: false, type: '', progress: 0, timeLeft: 0, timer: null, healTimer: null, bossTimer: null, hits: 0 };
 let pendingDeleteKey = null;
 
+// 📝 配點預覽暫存
+let statPreview = { str: 0, vit: 0, agi: 0 };
+
 const initBaseStats = { str: 2, vit: 1, agi: 0 };
 let initAllocatedStats = { str: 2, vit: 1, agi: 0 };
 
@@ -304,212 +305,126 @@ function initSlotScreen() {
         const key = `RIN_SAVE_SLOT_${i}`;
         const s = localStorage.getItem(key);
         const card = document.createElement('div'); card.className = "slot-card";
-        
-        let innerHtml = '';
         if(s) {
             try { 
                 let d = JSON.parse(s); 
-                innerHtml = `
-                    <button class="btn-del-slot" onclick="confirmDeleteSlot(event, '${key}')">刪除</button>
+                card.innerHTML = `<button class="btn-del-slot" onclick="confirmDeleteSlot(event, '${key}')">刪除</button>
                     <div class="card-content">
                         <h3 style="color:var(--cherry); margin-bottom:5px;">${d.name}</h3>
                         <p style="margin:0;">Lv.${d.lvl} [${pathNames[d.path] || '流浪者'}]</p>
                     </div>`; 
             } catch(e) {}
         } else {
-            innerHtml = `<div class="card-content"><h3>空白世界線 ${i}</h3><p style="color:#666">點擊開啟新旅程</p></div>`;
+            card.innerHTML = `<div class="card-content"><h3>空白世界線 ${i}</h3><p style="color:#666">點擊開啟新旅程</p></div>`;
         }
-        
-        card.innerHTML = innerHtml;
-        card.addEventListener('click', function(e) {
+        card.addEventListener('click', (e) => {
             if (e.target.classList.contains('btn-del-slot')) return;
-            currentSlotKey = key; 
-            startGame();
+            currentSlotKey = key; startGame();
         });
         container.appendChild(card);
     }
 }
 
 function confirmDeleteSlot(e, key) {
-    e.stopPropagation();
-    pendingDeleteKey = key;
+    e.stopPropagation(); pendingDeleteKey = key;
     openModal("⚠️ 刪除確認", "確定要刪除這條世界線嗎？資料將永遠消失。", "確認刪除", () => {
-        localStorage.removeItem(pendingDeleteKey);
-        initSlotScreen();
+        localStorage.removeItem(pendingDeleteKey); initSlotScreen();
     }, true);
 }
 
 function startGame() { document.getElementById('slot-screen').classList.add('hidden'); document.getElementById('main-game').classList.remove('hidden'); loadGame(); }
 
 function allocInitStat(t, val) {
-    if (val > 0) {
-        if (player.statPoints > 0) {
-            player.statPoints--; initAllocatedStats[t]++;
-        }
-    } else {
-        if (initAllocatedStats[t] > initBaseStats[t]) {
-            player.statPoints++; initAllocatedStats[t]--;
-        }
-    }
-    
+    if (player.statPoints > 0) { player.statPoints--; initAllocatedStats[t]++; }
     document.getElementById(`init-${t}`).innerText = initAllocatedStats[t];
     document.getElementById('init-points').innerText = player.statPoints;
+}
+
+function resetInitStats() {
+    player.statPoints = 5; initAllocatedStats = { str: 2, vit: 1, agi: 0 };
+    ['str','vit','agi'].forEach(s => document.getElementById(`init-${s}`).innerText = initAllocatedStats[s]);
+    document.getElementById('init-points').innerText = 5;
 }
 
 function loadGame() { 
     let s = localStorage.getItem(currentSlotKey); 
     if(s) {
-        let sd = JSON.parse(s);
-        Object.assign(player, sd);
+        let sd = JSON.parse(s); Object.assign(player, sd);
         if(typeof player.potions === 'number') { player.potions = { p1: player.potions, p2: 0, p3: 0, p4: 0 }; }
         if(player.selectedPotion === undefined) player.selectedPotion = 'p1';
         if(player.autoHeal === undefined) player.autoHeal = 0;
+        if(player.autoHealEnabled === undefined) player.autoHealEnabled = false;
         if(!player.lockedStats) player.lockedStats = { str: player.str, vit: player.vit, agi: player.agi };
+        if(player.lvl === 1 && player.exp < 30 && player.next === 100) player.next = 30;
     }
     initPotionSelect();
-    
     if(!player.name) { 
         document.getElementById('naming-area').classList.remove('hidden'); 
-        
-        player.statPoints = 5;
-        initAllocatedStats = { str: 2, vit: 1, agi: 0 };
-        document.getElementById('init-str').innerText = initAllocatedStats.str;
-        document.getElementById('init-vit').innerText = initAllocatedStats.vit;
-        document.getElementById('init-agi').innerText = initAllocatedStats.agi;
-        document.getElementById('init-points').innerText = player.statPoints;
-
+        resetInitStats();
         openModal("踏入輪迴", "名號一旦定下，便與靈魂綁定。請確認好您的修行天賦：", "開啟旅程", () => { 
             let n = document.getElementById('player-name-input').value.trim();
             if(!n) n = "無名者";
             if(player.statPoints > 0) { alert("請先分配完所有初始點數！"); return false; }
-            
-            player.name = n; 
-            player.str = initAllocatedStats.str;
-            player.vit = initAllocatedStats.vit;
-            player.agi = initAllocatedStats.agi;
+            player.name = n; player.str = initAllocatedStats.str; player.vit = initAllocatedStats.vit; player.agi = initAllocatedStats.agi;
             player.lockedStats = { str: player.str, vit: player.vit, agi: player.agi };
             player.hp = getMaxHP(); 
-            
-            document.getElementById('naming-area').classList.add('hidden');
-            postLoadInit();
+            document.getElementById('naming-area').classList.add('hidden'); postLoadInit();
         }); 
-    } else { 
-        postLoadInit(); 
-    } 
+    } else { postLoadInit(); } 
 }
 
-function postLoadInit() {
-    updateMapSelector();
-    spawn(false);
-    updateUI();
-    isPaused = false;
-    
-    // V0.1.9 測試版提示與 GM 判定
-    log("💡 【測試版提示】如有 Bug 或數值建議請聯繫開發者。", "var(--accent)");
-    if(player.name === "御雷神命") document.getElementById('card-gm').classList.remove('hidden');
-    
-    if(currentView === 'battle') startBattleLoop();
-}
-
-function saveGame(manual) { 
-    player.lastSaveTime = Date.now(); 
-    localStorage.setItem(currentSlotKey, JSON.stringify(player)); 
-    if(manual) log("✔ 靈魂記憶已封存於石碑之中。", "var(--quest)");
-}
+function postLoadInit() { updateMapSelector(); spawn(false); updateUI(); isPaused = false; if(player.name === "御雷神命") document.getElementById('card-gm').classList.remove('hidden'); if(currentView === 'battle') startBattleLoop(); }
+function saveGame(manual) { player.lastSaveTime = Date.now(); localStorage.setItem(currentSlotKey, JSON.stringify(player)); if(manual) log("✔ 靈魂記憶已封存於石碑之中。", "var(--quest)"); }
 
 function generateImportCode() {
-    saveGame(false); 
-    let code = btoa(unescape(encodeURIComponent(JSON.stringify(player))));
-    
+    saveGame(false); let code = btoa(unescape(encodeURIComponent(JSON.stringify(player))));
     if(navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(code).then(() => {
-            openModal("📤 生成成功", `引繼碼已<b style="color:var(--quest)">自動複製</b>到您的剪貼簿！<br>若複製失敗，請手動全選下方代碼：<br><textarea readonly onclick="this.select()">${code}</textarea>`, "太棒了");
-        }).catch(err => {
-            openModal("📤 您的引繼碼", `請手動複製下方代碼：<br><textarea readonly onclick="this.select()">${code}</textarea>`, "知道了");
-        });
-    } else {
-        openModal("📤 您的引繼碼", `請手動複製下方代碼：<br><textarea readonly onclick="this.select()">${code}</textarea>`, "知道了");
-    }
+        navigator.clipboard.writeText(code).then(() => openModal("📤 生成成功", `引繼碼已<b style="color:var(--quest)">自動複製</b>！<br><textarea readonly onclick="this.select()">${code}</textarea>`, "太棒了")).catch(err => openModal("📤 您的引繼碼", `請複製下方代碼：<br><textarea readonly onclick="this.select()">${code}</textarea>`, "知道了"));
+    } else openModal("📤 您的引繼碼", `請複製下方代碼：<br><textarea readonly onclick="this.select()">${code}</textarea>`, "知道了");
 }
 
 function promptImportCode() {
     let code = prompt("請貼上您的引繼碼：\n(讀取後將直接覆蓋您【當前】的世界線紀錄！)");
     if(code) {
         try {
-            let decodedData = JSON.parse(decodeURIComponent(escape(atob(code))));
-            if(decodedData.name) {
-                openModal("📥 讀取準備", `即將把此存檔位覆蓋為：<br><br><b style="color:var(--cherry); font-size:1.2em;">${decodedData.name}</b> (Lv.${decodedData.lvl})<br><br>此操作無法復原。`, "確認覆蓋", () => {
-                    localStorage.setItem(currentSlotKey, JSON.stringify(decodedData));
-                    location.reload();
-                }, true);
-            }
-        } catch(e) {
-            openModal("❌ 錯誤", "無效的引繼碼，請確認是否複製完整。", "知道了");
-        }
+            let d = JSON.parse(decodeURIComponent(escape(atob(code))));
+            if(d.name) openModal("📥 讀取準備", `即將覆蓋為：<br><br><b style="color:var(--cherry); font-size:1.2em;">${d.name}</b> (Lv.${d.lvl})`, "確認覆蓋", () => { localStorage.setItem(currentSlotKey, JSON.stringify(d)); location.reload(); }, true);
+        } catch(e) { openModal("❌ 錯誤", "無效的引繼碼。", "知道了"); }
     }
 }
 
 function initPotionSelect() {
     const sel = document.getElementById('potion-select'); sel.innerHTML = "";
-    for(let k in potionData) {
-        let rateTxt = `(+${Math.floor(potionData[k].rate * 100)}%)`;
-        sel.innerHTML += `<option value="${k}">${potionData[k].name} ${rateTxt}</option>`;
-    }
+    for(let k in potionData) sel.innerHTML += `<option value="${k}">${potionData[k].name} (+${Math.floor(potionData[k].rate * 100)}%)</option>`;
     sel.value = player.selectedPotion;
     document.getElementById('auto-heal-input').value = Math.floor(player.autoHeal * 100);
+    document.getElementById('auto-heal-check').checked = player.autoHealEnabled;
 }
 
-function updateAutoHeal(val) {
-    let num = parseInt(val);
-    if(isNaN(num) || num < 0) num = 0;
-    if(num > 99) num = 99;
-    document.getElementById('auto-heal-input').value = num;
-    player.autoHeal = num / 100;
-}
-
+function updateAutoHeal(val) { let num = parseInt(val); if(isNaN(num) || num < 0) num = 0; if(num > 99) num = 99; document.getElementById('auto-heal-input').value = num; player.autoHeal = num / 100; }
 function usePotion(isManual = false) {
     let pid = player.selectedPotion;
     if(player.potions[pid] > 0) {
         if(player.hp >= getMaxHP() && isManual) return log("生命值已滿！");
-        player.potions[pid]--;
-        let heal = Math.floor(getMaxHP() * potionData[pid].rate);
-        player.hp = Math.min(getMaxHP(), player.hp + heal);
-        showDmg('p-box', `+${heal}`, 'lime');
-        
-        if(player.potions[pid] === 0) {
-            log(`【系統】${potionData[pid].name} 耗盡！`, "var(--danger)");
-            if(isManual) autoHealLogic(true); 
-        }
-        
-        updateUI();
-        return true;
-    } else {
-        if(isManual) openModal("補給耗盡", "藥水不足！請前往萬屋購買。", "知道了");
-        return false;
-    }
+        player.potions[pid]--; let heal = Math.floor(getMaxHP() * potionData[pid].rate);
+        player.hp = Math.min(getMaxHP(), player.hp + heal); showDmg('p-box', `+${heal}`, 'lime');
+        if(player.potions[pid] === 0) { log(`【系統】${potionData[pid].name} 耗盡！`, "var(--danger)"); if(isManual) autoHealLogic(true); }
+        updateUI(); return true;
+    } else { if(isManual) openModal("補給耗盡", "藥水不足！請前往萬屋購買。", "知道了"); return false; }
 }
 
 function autoHealLogic(onlySearch = false) {
-    if(player.potions[player.selectedPotion] > 0 && !onlySearch) {
-        usePotion(false);
-    } else {
-        let order = ['p1', 'p2', 'p3', 'p4'];
-        let found = false;
+    if(player.potions[player.selectedPotion] > 0 && !onlySearch) usePotion(false);
+    else {
+        let order = ['p1', 'p2', 'p3', 'p4']; let found = false;
         for(let key of order) {
             if(player.potions[key] > 0) {
-                player.selectedPotion = key;
-                initPotionSelect(); 
-                if(!onlySearch) {
-                    log(`【系統】自動切換為 ${potionData[key].name}。`, "var(--accent)");
-                    usePotion(false);
-                }
-                found = true;
-                break; 
+                player.selectedPotion = key; initPotionSelect(); 
+                if(!onlySearch) { log(`【系統】自動切換為 ${potionData[key].name}。`, "var(--accent)"); usePotion(false); }
+                found = true; break; 
             }
         }
-        if(!found && !onlySearch) {
-            log(`【警告】所有藥水均已耗盡！`, "var(--danger)");
-        }
+        if(!found && !onlySearch) log(`【警告】所有藥水均已耗盡！`, "var(--danger)");
     }
 }
 
@@ -517,194 +432,84 @@ function tryStartTrial(type) {
     let reqs = { samurai: { stat: 'str', val: 20 }, onmyoji: { stat: 'agi', val: 20 }, shinto: { stat: 'vit', val: 20 } };
     let req = reqs[type];
     if(player.lvl < 10 || player[req.stat] < req.val) return openModal("⚠️ 資格不足", `妳的修為尚淺。需要 Lv.10 且 ${req.stat.toUpperCase()} 達到 ${req.val}。`, "知道了");
-
     let story = "";
-    if(type === 'samurai') {
-        story = "<b>【門生】助六</b> 抹了把汗道：「嘿！我是門生助六。<b>鐵家老</b>交代過武道台不收弱者。去擊敗那隻浪人，拿回信物證明實力，我才好幫妳寫引薦信！」<br><br><small style='color:var(--cherry)'>※ 傾向提升 STR（力量）。</small>";
-    } else if(type === 'onmyoji') {
-        story = "<b>【生員】螢</b> 冷冷地看著妳：「我是生員螢。<b>湊寮頭</b>正在處理靈災，考核由我執行。十秒內淨化靈體十五次，這是進入陰陽寮最基本的門檻。」<br><br><small style='color:var(--accent)'>※ 傾向提升 AGI（敏捷）。</small>";
-    } else if(type === 'shinto') {
-        story = "<b>【巫女】小梅</b> 雙手合十笑著說：「我是巫女小梅。<b>靜齋主</b>大人在忙，不過神殿的試煉已經準備好了。撐過鬼王幻影 20 秒，展現妳的意志吧！」<br><br><small style='color:var(--quest)'>※ 傾向提升 VIT（體質）。</small>";
-    }
-
+    if(type === 'samurai') story = "<b>【門生】助六</b> 抹了把汗道：「嘿！我是助六。<b>【家老】鐵</b>交代過武道台不收弱者。去擊敗那隻浪人，證明實力吧！」";
+    else if(type === 'onmyoji') story = "<b>【生員】螢</b> 冷冷地說：「我是螢。<b>【寮頭】湊</b>正在處理靈災，十秒內淨化靈體十五次，這是基本門檻。」";
+    else if(type === 'shinto') story = "<b>【巫女】小梅</b> 笑道：「我是小梅。<b>【齋主】靜</b>大人在忙，請撐過鬼王幻影 20 秒，展現妳的意志！」";
     openModal(`⛩️ 入門試煉：${pathNames[type]}`, story, "接受挑戰", () => beginTrial(type), true);
 }
 
 function beginTrial(type) {
-    trial = { active: true, type: type, progress: 0, timeLeft: 20, timer: null, healTimer: null, bossTimer: null, hits: 0 };
-    if(type === 'onmyoji') trial.timeLeft = 10;
-    player.kills = 0; 
-    switchView('battle');
-    
+    trial = { active: true, type: type, progress: 0, timeLeft: type === 'onmyoji' ? 10 : 20, timer: null, healTimer: null, bossTimer: null, hits: 0 };
+    player.kills = 0; switchView('battle');
     trial.timer = setInterval(() => {
         trial.timeLeft--; updateUI();
-        if(trial.timeLeft <= 0) {
-            if(trial.type === 'shinto') endTrial(true); 
-            else endTrial(false);
-        }
+        if(trial.timeLeft <= 0) { if(trial.type === 'shinto') endTrial(true); else endTrial(false); }
     }, 1000);
-
     if(type === 'shinto') {
-        trial.bossTimer = setInterval(() => {
-            let dmg = 500; 
-            player.hp -= dmg; showDmg('p-box', dmg, 'red'); updateUI();
-            if(player.hp <= 0) endTrial(false);
-        }, 3000);
-        trial.healTimer = setInterval(() => {
-            let heal = Math.floor(getMaxHP() * 0.6);
-            player.hp = Math.min(getMaxHP(), player.hp + heal);
-            showDmg('p-box', `神明庇護 +${heal}`, 'lime'); updateUI();
-        }, 5000);
+        trial.bossTimer = setInterval(() => { player.hp -= 500; showDmg('p-box', 500, 'red'); if(player.hp <= 0) endTrial(false); updateUI(); }, 3000);
+        trial.healTimer = setInterval(() => { let h = Math.floor(getMaxHP() * 0.6); player.hp = Math.min(getMaxHP(), player.hp + h); showDmg('p-box', `庇護 +${h}`, 'lime'); updateUI(); }, 5000);
     }
-    spawnTrialMonster();
-    log("⚔️ 試煉正式開始！", "var(--cherry)");
+    spawnTrialMonster(); log("⚔️ 試煉正式開始！", "var(--cherry)");
 }
-
 function spawnTrialMonster() {
     if(trial.type === 'samurai') monster = { name: "【試煉】浪人", hp: 300, mhp: 300, atk: 15, lvl: 3, isBoss: true };
-    if(trial.type === 'onmyoji') monster = { name: "【試煉】混亂靈體", hp: 99999, mhp: 99999, atk: 15, lvl: 10, isBoss: true }; 
-    if(trial.type === 'shinto') monster = { name: "【幻影】獄門·夜行鬼王", hp: 99999, mhp: 99999, atk: 0, lvl: 99, isBoss: true };
+    if(trial.type === 'onmyoji') monster = { name: "【試煉】靈體", hp: 99999, mhp: 99999, atk: 15, lvl: 10, isBoss: true }; 
+    if(trial.type === 'shinto') monster = { name: "【幻影】夜行鬼王", hp: 99999, mhp: 99999, atk: 0, lvl: 99, isBoss: true };
     updateUI();
 }
-
 function endTrial(success) {
-    clearInterval(trial.timer); 
-    clearInterval(trial.healTimer); 
-    clearInterval(trial.bossTimer);
-    trial.active = false;
-
+    clearInterval(trial.timer); clearInterval(trial.healTimer); clearInterval(trial.bossTimer); trial.active = false;
     if (success) {
-        let welcomeMsg = "";
-        if (trial.type === 'samurai') welcomeMsg = "<b>【門生】助六</b> 大笑：「喔喔！幹得好！<b>鐵家老</b>果然沒看錯人，從今天起妳就是天覽武道台的一員了，去領妳的刀吧！」";
-        else if (trial.type === 'onmyoji') welcomeMsg = "<b>【生員】螢</b> 微微點頭：「...合格了。動作還算準確。我會將妳的名字呈報給<b>湊寮頭</b>，進去大內陰陽寮後別丟臉了。」";
-        else if (trial.type === 'shinto') welcomeMsg = "<b>【巫女】小梅</b> 開心地拍手：「太好了！神靈聽到了妳的意志喔。我這就把結果告訴<b>靜齋主</b>大人，歡迎來到八百萬神殿！」";
-
-        player.path = trial.type;
-        openModal("✨ 覺醒成功", welcomeMsg, "接受力量");
+        let msg = trial.type === 'samurai' ? "<b>【門生】助六</b> 大笑：「好！妳就是天覽武道台的一員了！」" : trial.type === 'onmyoji' ? "<b>【生員】螢</b> 點頭：「合格了。去向寮頭報到吧。」" : "<b>【巫女】小梅</b> 拍手：「太好了！歡迎來到八百萬神殿！」";
+        player.path = trial.type; openModal("✨ 覺醒成功", msg, "接受力量");
     } else {
-        let failMsg = "";
-        if (trial.type === 'samurai') failMsg = "<b>【門生】助六</b> 嘖了一聲：「喂喂...就這點程度？<b>鐵大人</b>要是看到妳這副窩囊樣絕對會發火的。滾回去再練練！」";
-        else if (trial.type === 'onmyoji') failMsg = "<b>【生員】螢</b> 冷冷地轉身：「速度太慢，心境也亂了。這樣的靈力穩定度，根本沒資格見到<b>湊大人</b>。請回吧。」";
-        else if (trial.type === 'shinto') failMsg = "<b>【巫女】小梅</b> 擔心地看著妳：「哎呀...差一點點呢。別灰心，<b>靜大人</b>說過堅韌需要磨練，休息一下再試試看吧？」";
-
-        openModal("❌ 試煉失敗", failMsg, "知道了");
+        let msg = "試煉失敗了。再去磨練一下吧。"; openModal("❌ 試煉失敗", msg, "知道了");
     }
-
-    player.hp = getMaxHP(); 
-    spawn(false); 
-    changeMap(); 
+    player.hp = getMaxHP(); spawn(false); changeMap(); 
 }
 
 function getDefPercent(vit) {
-    if (vit <= 100) return vit * 0.5;
-    if (vit <= 250) return 50 + (vit - 100) * 0.2;
-    return Math.min(90, 80 + (vit - 250) * 0.1); 
+    let base = vit <= 100 ? vit * 0.5 : vit <= 300 ? 50 + (vit - 100) * 0.1 : 70 + (vit - 300) * 0.05;
+    return Math.min(90, base); 
 }
-
 function getEvaPercent(agi, path) {
-    let baseEva = 0;
-    if (agi <= 100) baseEva = agi * 0.5;
-    else if (agi <= 250) baseEva = 50 + (agi - 100) * 0.2;
-    else baseEva = 80 + (agi - 250) * 0.1;
-
-    let evadeCap = (path === 'onmyoji') ? 80 : 60;
-    return Math.min(evadeCap, baseEva);
+    let base = agi <= 100 ? agi * 0.5 : agi <= 300 ? 50 + (agi - 100) * 0.1 : 70 + (agi - 300) * 0.05;
+    return Math.min(path === 'onmyoji' ? 80 : 60, base);
 }
 
 function startBattleLoop() {
-    if(battleTimer) clearTimeout(battleTimer);
-    if(isPaused || currentView !== 'battle' || isReviving) return;
-
-    if(player.autoHeal > 0 && (player.hp / getMaxHP()) < player.autoHeal) autoHealLogic();
-
-    let isOnmyo = (player.path === 'onmyoji');
-    let isSamurai = (player.path === 'samurai');
-
-    let agiMulti = isOnmyo ? 18 : 15;
-    let delay = Math.max(200, 1500 - player.agi * agiMulti);
-    
-    let strMulti = isSamurai ? 2.0 : 1.5;
-    let pDmg = Math.floor(player.str * strMulti);
-
-    let critChance = 5; 
-    if(isSamurai) critChance += Math.floor(player.str * 0.15); 
-    critChance = Math.min(80, critChance);
-    let isCrit = Math.random() * 100 < critChance;
-    if(isCrit) pDmg = Math.floor(pDmg * 1.5);
-
-    if(trial.active && trial.type === 'onmyoji') {
-        trial.hits++;
-        showDmg('m-box', pDmg + (isCrit ? "!!" : ""), isCrit ? 'orange' : 'white');
-        document.getElementById('kill-text').innerHTML = `打擊數: <span style="color:white">${trial.hits}/15</span>`;
-        if(trial.hits >= 15) { endTrial(true); return; }
-    } else {
-        monster.hp -= pDmg; showDmg('m-box', pDmg + (isCrit ? "!!" : ""), isCrit ? 'orange' : 'white');
-    }
-
-    if(monster.hp <= 0 && (!trial.active || trial.type !== 'onmyoji')) {
-        handleVictory();
-    } else {
-        let evadeRate = getEvaPercent(player.agi, player.path);
-
-        if (Math.random() * 100 > evadeRate) {
-            let rawDmg = monster.atk;
-            let defPercent = getDefPercent(player.vit);
-            let mDmg = Math.max(1, Math.floor(rawDmg * (1 - defPercent / 100)));
-
+    if(battleTimer) clearTimeout(battleTimer); if(isPaused || currentView !== 'battle' || isReviving) return;
+    if(player.autoHealEnabled && player.autoHeal > 0 && (player.hp / getMaxHP()) < player.autoHeal) autoHealLogic();
+    let delay = Math.max(200, 1500 - player.agi * (player.path === 'onmyoji' ? 18 : 15));
+    let pDmg = Math.floor(player.str * (player.path === 'samurai' ? 2.0 : 1.5));
+    let crit = Math.min(80, 5 + (player.path === 'samurai' ? player.str * 0.15 : 0));
+    let isCrit = Math.random() * 100 < crit; if(isCrit) pDmg = Math.floor(pDmg * 1.5);
+    if(trial.active && trial.type === 'onmyoji') { trial.hits++; showDmg('m-box', pDmg, isCrit?'orange':'white'); if(trial.hits >= 15) { endTrial(true); return; } }
+    else { monster.hp -= pDmg; showDmg('m-box', pDmg + (isCrit?"!!":""), isCrit?'orange':'white'); }
+    if(monster.hp <= 0 && (!trial.active || trial.type !== 'onmyoji')) handleVictory();
+    else {
+        let eva = getEvaPercent(player.agi, player.path);
+        if (Math.random() * 100 > eva) {
+            let mDmg = Math.max(1, Math.floor(monster.atk * (1 - getDefPercent(player.vit) / 100)));
             player.hp -= mDmg; showDmg('p-box', mDmg, '#ff4757');
-        } else {
-            showDmg('p-box', "MISS", 'skyblue');
-        }
+        } else showDmg('p-box', "MISS", 'skyblue');
     }
-
     if(player.hp <= 0) handleDeath();
-    updateUI();
-    battleTimer = setTimeout(startBattleLoop, delay);
+    updateUI(); battleTimer = setTimeout(startBattleLoop, delay);
 }
 
 function handleVictory() {
     log(`擊敗 ${monster.name}`);
-    if(trial.active) {
-        if(trial.type === 'onmyoji') { trial.progress++; if(trial.progress >= 1) endTrial(true); }
-        else if(trial.type === 'samurai') { trial.progress++; if(trial.progress >= 1) endTrial(true); } 
-        else if(trial.type === 'shinto') { spawnTrialMonster(); } 
-        return;
-    }
-
+    if(trial.active) { trial.progress++; if(trial.type !== 'shinto' && trial.progress >= 1) endTrial(true); return; }
     let m = maps[player.mapIdx];
-
     if(monster.isBoss) {
-        let bExp = m.baseExp * 5;
-        let bGold = m.baseGold * 5;
-        player.exp += bExp; 
-        player.gold += bGold;
-        
-        player.potions.p1 += 2;
-        let dropMsg = "薄濁之水x2";
-        if (Math.random() < 0.1) {
-            player.potions.p2 += 1;
-            dropMsg += "，清流之露x1";
-        }
-        log(`🏆 首領討伐成功！獲得 ${bExp} EXP, ${bGold} 金幣。<br>🎁 戰利品：${dropMsg}`, "var(--gold)");
-
-        if (player.mapIdx < maps.length - 1) {
-            player.mapIdx++; 
-            player.maxMapIdx = Math.max(player.maxMapIdx, player.mapIdx);
-            // V0.1.9 地圖解鎖彈窗
-            openModal("🗺️ 領域擴張", `更深邃的黑暗已被揭開...<br><br>【${maps[player.mapIdx].name}】已解鎖。`, "繼續前進");
-        } else {
-            log("🗺️ 妳已經征服了目前所有的區域！", "var(--gold)");
-        }
-        player.kills = 0; 
-        updateMapSelector();
+        player.exp += m.baseExp * 5; player.gold += m.baseGold * 5; player.potions.p1 += 2;
+        if (player.mapIdx < maps.length - 1) { player.mapIdx++; player.maxMapIdx = Math.max(player.maxMapIdx, player.mapIdx); openModal("🗺️ 領域擴張", `【${maps[player.mapIdx].name}】已解鎖。`, "前進"); }
+        player.kills = 0; updateMapSelector();
     } else {
         player.exp += m.baseExp; player.gold += m.baseGold;
-        
-        if (Math.random() < m.dropRate) {
-            player.potions.p1++;
-            log("🎁 發現戰利品：薄濁之水 x1", "var(--quest)");
-        }
-
+        if (Math.random() < m.dropRate) { player.potions.p1++; log("🎁 獲得：薄濁之水 x1", "var(--quest)"); }
         if(player.mapIdx == player.maxMapIdx && player.kills < 10) player.kills++;
     }
     checkLevelUp(); spawn();
@@ -712,432 +517,165 @@ function handleVictory() {
 
 function handleDeath() {
     if(trial.active) { endTrial(false); return; }
-    if(player.revives > 0) { player.revives--; log("🛡️ 不死御守發效，原地復活！", "var(--gold)"); player.hp = getMaxHP(); return; }
-    
-    // V0.1.9 永夜氛圍文案
-    log(`💀 妳的魂火在黑暗中熄滅了...`, "var(--danger)");
-    player.hp = 0;
-    isReviving = true;
-    
-    if(monster.isBoss) {
-        monster.hp = monster.mhp; 
-        setTimeout(() => spawn(false), 500); 
-    }
-
-    const tips = [
-        "【萬屋】鈴：「哎呀呀...妳這樣我是會很困擾的。下次出門記得把藥水帶齊喔！」",
-        "【旅籠屋】權三：「呼...年輕人就是衝動。看妳這副慘樣，下次撐不住就快點回我這歇歇吧。」"
-    ];
-    document.getElementById('death-tip-box').innerText = tips[Math.floor(Math.random()*tips.length)];
-
-    let sec = 5;
-    const ov = document.getElementById('revive-timer-overlay');
-    const txt = document.getElementById('revive-seconds');
-    ov.classList.remove('hidden');
-    txt.innerText = sec;
-
-    updateUI(); 
-
+    if(player.revives > 0) { player.revives--; log("🛡️ 不死御守發效！", "var(--gold)"); player.hp = getMaxHP(); return; }
+    log(`💀 魂火熄滅...`, "var(--danger)");
+    player.hp = 0; isReviving = true;
+    if(monster.isBoss) { player.autoBoss = false; monster.hp = monster.mhp; setTimeout(() => spawn(false), 500); }
+    let sec = 5; const ov = document.getElementById('revive-timer-overlay'); const txt = document.getElementById('revive-seconds');
+    ov.classList.remove('hidden'); txt.innerText = sec; updateUI();
     const timer = setInterval(() => {
-        sec--;
-        txt.innerText = sec;
-        if(sec <= 0) {
-            clearInterval(timer);
-            ov.classList.add('hidden');
-            isReviving = false;
-            player.hp = getMaxHP();
-            log("✨ 於永夜之境中再度點燃靈魂，修行繼續。", "var(--quest)");
-            if(currentView === 'battle') startBattleLoop();
-            updateUI();
-        }
+        sec--; txt.innerText = sec;
+        if(sec <= 0) { clearInterval(timer); ov.classList.add('hidden'); isReviving = false; player.hp = getMaxHP(); log("✨ 修行繼續。", "var(--quest)"); if(currentView === 'battle') startBattleLoop(); updateUI(); }
     }, 1000);
 }
 
 function checkLevelUp() {
     while(player.exp >= player.next) {
-        player.lvl++; player.exp -= player.next;
-        player.next = Math.floor(player.next * 1.3); player.statPoints += 3;
-        player.hp = getMaxHP(); 
-        log("🎉 境界提升！體力已完全恢復。", "var(--cherry)");
+        player.lvl++; player.exp -= player.next; player.next = Math.floor(player.next * 1.3); player.statPoints += 3;
+        player.hp = getMaxHP(); log("🎉 境界提升！體力已恢復。", "var(--cherry)");
     }
 }
 
 function spawn(boss = false) {
     if(trial.active) return;
-    let m = maps[player.mapIdx] || maps[0];
-    
-    if(boss) {
-        let hp = 400 + player.mapIdx*1200;
-        monster = { name: "【BOSS】"+m.boss, hp: hp, mhp: hp, atk: m.bossAtk, lvl: player.mapIdx*5+5, isBoss: true };
-    } else if (monster.hp <= 0 || monster.isBoss) {
-        let hp = 60 + player.mapIdx*250;
-        monster = { name: m.mobs[Math.floor(Math.random()*m.mobs.length)], hp: hp, mhp: hp, atk: m.baseAtk, lvl: player.mapIdx*5+1, isBoss: false };
+    let m = maps[player.mapIdx];
+    if(boss) { let hp = 400 + player.mapIdx*1200; monster = { name: "【BOSS】"+m.boss, hp: hp, mhp: hp, atk: m.bossAtk, lvl: player.mapIdx*5+5, isBoss: true }; }
+    else if (monster.hp <= 0 || monster.isBoss) {
+        let hp = 60 + player.mapIdx*250; monster = { name: m.mobs[Math.floor(Math.random()*m.mobs.length)], hp: hp, mhp: hp, atk: m.baseAtk, lvl: player.mapIdx*5+1, isBoss: false };
         if(player.kills >= 10 && player.mapIdx == player.maxMapIdx && player.autoBoss) setTimeout(() => spawn(true), 1000);
     }
     document.getElementById('btn-boss').disabled = (player.kills < 10 || monster.isBoss || isReviving);
 }
 
 function getMaxHP() { return player.path === 'shinto' ? player.vit * 65 + 35 : player.vit * 50 + 50; }
-
 function updateVillageMenuCard() {
-    let pathCard = document.getElementById('card-path');
-    if(!pathCard) return;
-    if(player.path === 'none') {
-        pathCard.innerHTML = `<h3 style="color:var(--cherry); margin:5px 0;">⛩️ 選擇流派</h3><p style="margin:0; font-size:0.8em; color:#aaa;">劇情試煉與轉職</p>`;
-    } else {
-        pathCard.innerHTML = `<h3 style="color:var(--accent); margin:5px 0;">⛩️ ${dojoNames[player.path]}</h3><p style="margin:0; font-size:0.8em; color:#aaa;">技能與挑戰</p>`;
-    }
+    let pathCard = document.getElementById('card-path'); if(!pathCard) return;
+    pathCard.innerHTML = player.path === 'none' ? `<h3 style="color:var(--cherry); margin:5px 0;">⛩️ 選擇流派</h3><p style="margin:0; font-size:0.8em; color:#aaa;">試煉與轉職</p>` :
+    `<h3 style="color:var(--accent); margin:5px 0;">⛩️ ${dojoNames[player.path]}</h3><p style="margin:0; font-size:0.8em; color:#aaa;">技能與挑戰</p>`;
 }
 
 function updateUI() {
-    document.getElementById('p-name').innerText = player.name;
-    document.getElementById('p-display-name').innerText = player.name;
-    document.getElementById('p-lvl').innerText = player.lvl;
-    document.getElementById('p-path-text').innerText = pathNames[player.path] || '流浪者';
-    document.getElementById('p-gold').innerText = player.gold.toLocaleString();
-    
+    document.getElementById('p-name').innerText = player.name; document.getElementById('p-lvl').innerText = player.lvl;
+    document.getElementById('p-path-text').innerText = pathNames[player.path]; document.getElementById('p-gold').innerText = player.gold.toLocaleString();
     document.getElementById('p-str-val').innerText = player.str; document.getElementById('p-vit-val').innerText = player.vit; document.getElementById('p-agi-val').innerText = player.agi;
-    
-    let statStr = document.getElementById('stat-str'); statStr.innerText = player.str; 
-    let statVit = document.getElementById('stat-vit'); statVit.innerText = player.vit; 
-    let statAgi = document.getElementById('stat-agi'); statAgi.innerText = player.agi; 
+    document.getElementById('stat-str').innerText = player.str; document.getElementById('stat-vit').innerText = player.vit; document.getElementById('stat-agi').innerText = player.agi;
     document.getElementById('stat-points').innerText = player.statPoints;
-
-    let isOnmyo = (player.path === 'onmyoji');
-    let isSamurai = (player.path === 'samurai');
     
-    let agiMulti = isOnmyo ? 18 : 15;
-    let currentDelay = 1500 - player.agi * agiMulti;
-    if (currentDelay <= 200) {
-        statAgi.style.color = "#ff4757";
-        statAgi.title = "攻速已達絕對極限 (0.2s)";
-    } else {
-        statAgi.style.color = "var(--gold)"; statAgi.title = "";
-    }
-
-    let defPercent = getDefPercent(player.vit);
-    if (defPercent >= 90) {
-        statVit.style.color = "#ff4757"; 
-        statVit.title = "減傷已達人體極限 (90%)";
-    } else if (defPercent >= 70) {
-        statVit.style.color = "#74b9ff"; 
-        statVit.title = "減傷率超過 70%，收益開始大幅降低";
-    } else {
-        statVit.style.color = "var(--gold)"; statVit.title = "";
-    }
-
-    let evadePercent = getEvaPercent(player.agi, player.path);
-    document.getElementById('det-atk').innerText = Math.floor(player.str * (isSamurai ? 2.0 : 1.5));
-    document.getElementById('det-spd').innerText = (Math.max(200, currentDelay) / 1000).toFixed(2);
-    document.getElementById('det-def').innerText = defPercent.toFixed(1);
-    document.getElementById('det-eva').innerText = evadePercent.toFixed(1);
-
-    if(!trial.active) {
-        let mInfo = maps[player.mapIdx];
-        document.getElementById('map-info').innerText = `EXP: ${mInfo.baseExp} | 金: ${mInfo.baseGold}`;
-    } else {
-        document.getElementById('map-info').innerText = '';
-    }
-
-    let mhp = getMaxHP(); if(player.hp > mhp) player.hp = mhp;
-    document.getElementById('p-hp-bar').style.width = (player.hp / mhp * 100) + "%"; 
-    document.getElementById('p-hp-text').innerText = `${Math.floor(player.hp)} / ${mhp}`;
+    // 📝 預覽更新顯示
+    ['str','vit','agi'].forEach(s => {
+        let pEl = document.getElementById(`pre-${s}`);
+        pEl.innerText = statPreview[s] > 0 ? `+${statPreview[s]}` : "";
+    });
     
-    document.getElementById('p-exp-bar').style.width = (player.exp / player.next * 100) + "%"; 
+    // 若有預覽點數，顯示「取消/確定」按鈕列
+    document.getElementById('alloc-btns').classList.toggle('hidden', (statPreview.str + statPreview.vit + statPreview.agi) === 0);
+
+    let def = getDefPercent(player.vit); let eva = getEvaPercent(player.agi, player.path);
+    document.getElementById('det-atk').innerText = Math.floor(player.str * (player.path === 'samurai' ? 2.0 : 1.5));
+    document.getElementById('det-spd').innerText = (Math.max(200, 1500 - player.agi * (player.path === 'onmyoji' ? 18 : 15)) / 1000).toFixed(2);
+    document.getElementById('det-def').innerText = def.toFixed(1); document.getElementById('det-eva').innerText = eva.toFixed(1);
+
+    document.getElementById('p-hp-bar').style.width = (player.hp / getMaxHP() * 100) + "%";
+    document.getElementById('p-hp-text').innerText = `${Math.floor(player.hp)} / ${getMaxHP()}`;
+    document.getElementById('p-exp-bar').style.width = (player.exp / player.next * 100) + "%";
     document.getElementById('p-exp-text').innerText = `${player.exp} / ${player.next}`;
-    
     document.getElementById('m-name').innerText = monster.name;
-    document.getElementById('m-hp-bar').style.width = (monster.hp / monster.mhp * 100) + "%"; 
+    document.getElementById('m-hp-bar').style.width = (monster.hp / monster.mhp * 100) + "%";
     document.getElementById('m-hp-text').innerText = `${Math.floor(monster.hp)} / ${monster.mhp}`;
-    document.getElementById('m-lvl').innerText = monster.lvl;
-
-    if(trial.active) {
-        document.getElementById('map-ui-area').innerHTML = `<span style='color:var(--danger); font-weight:bold;'>⛩️ 試煉中 - 倒數: ${trial.timeLeft}s</span>`;
-        if(trial.type !== 'onmyoji') document.getElementById('kill-text').innerHTML = `目標: <span style="color:white">${trial.progress}</span>`;
-        document.getElementById('btn-boss').disabled = true;
-    } else {
-        if(!document.getElementById('map-selector')) {
-            document.getElementById('map-ui-area').innerHTML = `<select id="map-selector" onchange="changeMap()"></select>`;
-            updateMapSelector();
-        }
-        document.getElementById('kill-text').innerHTML = `擊殺: <span id="kill-count">${player.kills}</span>/10`;
-    }
-
-    document.getElementById('potion-count').innerText = player.potions[player.selectedPotion];
-    document.getElementById('revive-count').innerText = player.revives;
     
-    document.getElementById('btn-boss').disabled = (player.kills < 10 || monster.isBoss || isReviving);
-    
-    // UI - 屬性增減防呆與鎖定按鈕顯示
-    let isAllocating = (player.str > player.lockedStats.str || player.vit > player.lockedStats.vit || player.agi > player.lockedStats.agi || player.statPoints > 0);
-    let lockBtn = document.getElementById('btn-lock-stats');
-    if(lockBtn) lockBtn.style.display = isAllocating ? 'inline-block' : 'none';
-
-    document.querySelectorAll('.btn-plus').forEach(b => {
-        b.style.visibility = (player.statPoints > 0 && !isReviving) ? 'visible' : 'hidden';
-    });
-    document.querySelectorAll('.btn-minus').forEach((b, index) => {
-        let stat = index === 0 ? 'str' : (index === 1 ? 'vit' : 'agi');
-        b.style.visibility = (player[stat] > player.lockedStats[stat] && !isReviving) ? 'visible' : 'hidden';
-    });
-    
-    // UI - 地圖選擇器防呆
-    const selMap = document.getElementById('map-selector');
-    if(selMap) selMap.disabled = (trial.active || monster.isBoss);
-    
+    document.querySelectorAll('.btn-plus').forEach(b => b.disabled = (player.statPoints <= 0 || isReviving));
+    document.getElementById('t-village').disabled = (player.autoBoss || monster.isBoss || trial.active);
+    document.getElementById('auto-boss-check').checked = player.autoBoss;
     updateVillageMenuCard();
 }
 
-function allocStat(t, val) {
-    if(val > 0) {
-        if(player.statPoints > 0) {
-            player.statPoints--; player[t]++; 
-            if(t==='vit') player.hp += (player.path==='shinto'?65:50); 
-            updateUI(); 
-        }
-    } else {
-        if(player[t] > player.lockedStats[t]) {
-            player.statPoints++; player[t]--;
-            if(t==='vit') player.hp = Math.min(getMaxHP(), player.hp);
-            updateUI();
-        }
+// 📝 V0.2.2: 配點預覽邏輯函數
+function previewStat(t) { if(player.statPoints > 0) { player.statPoints--; statPreview[t]++; updateUI(); } }
+function cancelPreview() { player.statPoints += (statPreview.str + statPreview.vit + statPreview.agi); statPreview = { str: 0, vit: 0, agi: 0 }; updateUI(); }
+function confirmStats() {
+    player.str += statPreview.str; 
+    player.vit += statPreview.vit; 
+    player.agi += statPreview.agi;
+    
+    // 如果有加體質，將當前血量按比例補回最大生命值的增量
+    if(statPreview.vit > 0) {
+        let hpGain = statPreview.vit * (player.path === 'shinto' ? 65 : 50);
+        player.hp += hpGain;
     }
-}
-
-function lockStats() {
+    
     player.lockedStats = { str: player.str, vit: player.vit, agi: player.agi };
-    log("✔ 屬性配點已鎖定。", "var(--quest)");
+    statPreview = { str: 0, vit: 0, agi: 0 }; 
+    log("✔ 屬性已固化。", "var(--quest)"); 
     updateUI();
 }
 
 function switchView(v) {
-    if(isResting) return openModal("歇息中", "正在旅籠屋休息，請稍候...", "繼續休息");
-    if(trial.active && v !== 'battle') return openModal("警告", "試煉中無法離開！", "繼續戰鬥");
-    if(monster.isBoss && v !== 'battle') return openModal("警告", "首領戰鬥中無法脫逃！", "繼續戰鬥");
-
-    currentView = v;
-    document.getElementById('view-battle').classList.toggle('hidden', v !== 'battle');
-    document.getElementById('view-village').classList.toggle('hidden', v !== 'village');
-    document.getElementById('t-battle').classList.toggle('active', v === 'battle');
-    document.getElementById('t-village').classList.toggle('active', v === 'village');
-    if(v === 'battle') { isPaused = false; startBattleLoop(); } else { isPaused = true; backToVillage(); }
+    if(isResting) return openModal("歇息中", "正在旅籠屋休息...", "等候");
+    if(trial.active || monster.isBoss || player.autoBoss) if(v !== 'battle') return openModal("鎖定中", "請先結束戰鬥或取消自動挑戰。", "繼續戰鬥");
+    currentView = v; document.getElementById('view-battle').classList.toggle('hidden', v !== 'battle'); document.getElementById('view-village').classList.toggle('hidden', v !== 'village');
+    if(v === 'battle') { isPaused = false; startBattleLoop(); } else { isPaused = true; }
 }
 
 function showSubView(s) {
-    if(isResting) return openModal("歇息中", "正在旅籠屋休息，請稍候...", "繼續休息");
-    document.getElementById('village-menu').classList.add('hidden');
-    document.getElementById('sub-view').classList.remove('hidden');
+    if(isResting) return; document.getElementById('village-menu').classList.add('hidden'); document.getElementById('sub-view').classList.remove('hidden');
     const c = document.getElementById('sub-content'); c.innerHTML = "";
     if(s==='inn') {
-        let cost = player.lvl <= 5 ? 0 : player.lvl * 2;
-        c.innerHTML = `<h3>🛌 旅籠屋</h3><p style="font-size:0.9em; color:#aaa;">此處幽靜，可洗去一身塵土與疲憊。</p>
-        <div style="background:#111; padding:15px; border-radius:8px; border:1px solid #333; margin: 15px 0;">
-            <p style="margin:5px 0;">目前體力：<span style="color: ${player.hp < getMaxHP() ? 'var(--danger)' : 'var(--quest)'}; font-weight:bold;">${Math.floor(player.hp)}</span> / ${getMaxHP()}</p>
-            <p style="margin:5px 0;">持有金幣：<span style="color:var(--gold);">${player.gold}</span></p>
-        </div>
-        <p style="color:var(--gold); font-size:1.1em; margin: 10px 0;">休息費用：${cost === 0 ? '<span style="color:var(--quest)">新手免費</span>' : cost + ' 金幣'}</p>
-        <div id="inn-action-area">
-            <button class="btn-action" style="width:100%; margin-top:10px;" id="btn-inn-rest" onclick="innRest(${cost})">入內休息 (5秒)</button>
-        </div>`;
+        let cost = player.lvl <= 10 ? 0 : Math.min(50, player.lvl * 2);
+        c.innerHTML = `<h3>🛌 旅籠屋</h3><p style="font-size:0.9em; color:#aaa;">Lv.10 以內免費，最高收費 50 金幣。</p>
+        <p>持有金幣：${player.gold} | 休息費用：${cost === 0 ? '<span style="color:var(--quest)">免費</span>' : cost}</p>
+        <button class="btn-action" style="width:100%;" id="btn-inn-rest" onclick="innRest(${cost})">入內休息 (5秒)</button>`;
     } else if(s==='gm') {
-        c.innerHTML = `<h3>🛠️ 神明特權 (GM 控制台)</h3>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:15px;">
-            <button class="btn-action" style="background:#444; color:white;" onclick="changeGMStat('lvl', 1)">等級 +1</button>
-            <button class="btn-action" style="background:#444; color:white;" onclick="changeGMStat('lvl', -1)">等級 -1</button>
-            <button class="btn-action" style="background:#444; color:white;" onclick="changeGMStat('str', 1)">力量 +1</button>
-            <button class="btn-action" style="background:#444; color:white;" onclick="changeGMStat('str', -1)">力量 -1</button>
-            <button class="btn-action" style="background:#444; color:white;" onclick="changeGMStat('vit', 1)">體質 +1</button>
-            <button class="btn-action" style="background:#444; color:white;" onclick="changeGMStat('vit', -1)">體質 -1</button>
-            <button class="btn-action" style="background:#444; color:white;" onclick="changeGMStat('agi', 1)">敏捷 +1</button>
-            <button class="btn-action" style="background:#444; color:white;" onclick="changeGMStat('agi', -1)">敏捷 -1</button>
-        </div>
-        <button class="btn-action" style="background:var(--danger); color:white; width:100%; margin-bottom:10px;" onclick="resetStats()">♻️ 重新配點</button>
-        <button class="btn-action" style="background:var(--gm); width:100%; margin-bottom:10px;" onclick="player.gold+=10000; updateUI(); log('金幣 +10000');">💰 +10,000 金幣</button>
-        <button class="btn-action" style="background:var(--gm); width:100%; margin-bottom:15px;" onclick="player.maxMapIdx=maps.length-1; updateMapSelector();">🗺️ 解鎖全部地圖</button>
-        <p style="font-size:0.9em; color:#aaa;">強制轉職：</p>
-        <button onclick="player.path='samurai'; updateUI();">武士</button> <button onclick="player.path='onmyoji'; updateUI();">陰陽師</button> <button onclick="player.path='shinto'; updateUI();">神道教</button> <button onclick="player.path='none'; updateUI();">洗白</button>`;
-    } else if(s==='shop') {
-        c.innerHTML = `<h3 style="color:var(--cherry);">🏮 萬屋</h3><p style="color:var(--gold)">持有金幣：${player.gold}</p>`;
-        c.innerHTML += `<div id="shop-inventory-display" style="background:#111; padding:10px; border-radius:8px; margin-bottom:15px; border:1px solid #333; font-size:0.9em; color:#aaa;"></div>`;
-        c.innerHTML += `<h4 style="color:var(--accent); border-bottom:1px dashed #555; padding-bottom:5px; margin-bottom: 10px; text-align:left;">[ 恢復類道具 ]</h4>`;
-        
-        let selHtml = `<select id="shop-potion-select" style="flex:2;">`;
-        for(let k in potionData) {
-            let rateTxt = `(+${Math.floor(potionData[k].rate * 100)}%)`;
-            selHtml += `<option value="${k}">${potionData[k].name} ${rateTxt} ($${potionData[k].cost})</option>`;
-        }
-        selHtml += `<option value="rev">不死御守 ($5000)</option></select>`;
-
-        c.innerHTML += `<div style="display:flex; gap:10px; margin-bottom:15px;">
-            ${selHtml}
-            <input type="number" id="shop-buy-count" value="1" min="1" style="flex:1; text-align:center;">
-        </div>
-        <button class="btn-action" style="width:100%; margin-bottom:15px;" onclick="buyBulkItem()">批量購買</button>`;
-        updateShopInvDisplay();
+        c.innerHTML = `<h3>🛠️ GM控制台</h3><button onclick="player.gold+=10000; updateUI();">💰 +10,000</button> <button onclick="player.maxMapIdx=3; updateMapSelector();">🗺️ 全地圖</button>`;
     } else if(s==='save') {
-        c.innerHTML = `
-            <h3 style="color:var(--cherry);">💾 紀錄點</h3>
-            <p style="font-size:0.9em; color:#aaa; margin-bottom:20px;">在這裡可以備份或覆蓋【當前】世界線的靈魂記憶。</p>
-            <button class="btn-action" style="width:100%; margin-bottom:15px;" id="btn-save-game" onclick="saveGameWithFeedback()">手動存檔</button>
-            <button class="btn-action" style="width:100%; margin-bottom:15px; background:var(--accent);" onclick="generateImportCode()">📤 生成引繼碼 (自動複製)</button>
-            <button class="btn-action" style="width:100%; background:#e67e22;" onclick="promptImportCode()">📥 輸入引繼碼 (覆蓋此紀錄)</button>
-        `;
+        c.innerHTML = `<h3>💾 紀錄點</h3><button class="btn-action" style="width:100%; margin-bottom:10px;" onclick="saveGameWithFeedback()" id="btn-save-game">手動存檔</button>
+        <button class="btn-action" style="width:100%; margin-bottom:10px; background:var(--accent);" onclick="generateImportCode()">📤 生成引繼碼 (自動複製)</button>
+        <button class="btn-action" style="width:100%; background:#e67e22;" onclick="promptImportCode()">📥 輸入引繼碼 (覆蓋此紀錄)</button>`;
+    } else if(s==='shop') {
+        let selHtml = `<select id="shop-potion-select" style="flex:2;">`;
+        for(let k in potionData) selHtml += `<option value="${k}">${potionData[k].name} (+${Math.floor(potionData[k].rate * 100)}%) ($${potionData[k].cost})</option>`;
+        selHtml += `<option value="rev">不死御守 ($5000)</option></select>`;
+        c.innerHTML = `<h3>🏮 萬屋</h3><p>持有：${player.gold}</p><div id="shop-inventory-display" style="background:#111; padding:10px; border-radius:8px; margin-bottom:15px; font-size:0.9em; color:#aaa;"></div>
+        <div style="display:flex; gap:10px; margin-bottom:15px;">${selHtml}<input type="number" id="shop-buy-count" value="1" min="1" style="flex:1;"></div>
+        <button class="btn-action" style="width:100%;" onclick="buyBulkItem()">批量購買</button>`;
+        updateShopInvDisplay();
     } else if(s==='path') {
-        if(player.path === 'none') {
-            c.innerHTML = `<h3>⛩️ 流派覺醒</h3>
-                           <div class="item-row"><div><b>天覽武道台</b><br><small>武士 (主要提升STR) | 需求: Lv.10, STR 20</small></div><button class="btn-action" onclick="tryStartTrial('samurai')">試煉</button></div>
-                           <div class="item-row"><div><b>大內陰陽寮</b><br><small>陰陽師 (主要提升AGI) | 需求: Lv.10, AGI 20</small></div><button class="btn-action" onclick="tryStartTrial('onmyoji')">試煉</button></div>
-                           <div class="item-row"><div><b>八百萬神殿</b><br><small>神道教 (主要提升VIT) | 需求: Lv.10, VIT 20</small></div><button class="btn-action" onclick="tryStartTrial('shinto')">試煉</button></div>`;
-        } else {
-            c.innerHTML = `<h3>⛩️ ${dojoNames[player.path]}</h3>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px;">
-                <div class="slot-card" style="margin:0; width:auto; border-color:#555;"><h4>📜 學習技能</h4><p style="font-size:0.8em; color:#aaa;">(即將開放)</p></div>
-                <div class="slot-card" style="margin:0; width:auto; border-color:#555;"><h4>🎯 流派任務</h4><p style="font-size:0.8em; color:#aaa;">(即將開放)</p></div>
-                <div class="slot-card" style="margin:0; width:auto; border-color:#555;"><h4>🐾 流派助手</h4><p style="font-size:0.8em; color:#aaa;">(即將開放)</p></div>
-                <div class="slot-card" style="margin:0; width:auto; border-color:#555;"><h4>⚔️ 流派挑戰</h4><p style="font-size:0.8em; color:#aaa;">(即將開放)</p></div>
-            </div>`;
-        }
+        if(player.path==='none') c.innerHTML = `<h3>⛩️ 流派覺醒</h3><div class="item-row"><div><b>天覽武道台</b><br><small>武士 (主要提升STR) | 需求: Lv.10, STR 20</small></div><button class="btn-action" onclick="tryStartTrial('samurai')">試煉</button></div>
+        <div class="item-row"><div><b>大內陰陽寮</b><br><small>陰陽師 (主要提升AGI) | 需求: Lv.10, AGI 20</small></div><button class="btn-action" onclick="tryStartTrial('onmyoji')">試煉</button></div>
+        <div class="item-row"><div><b>八百萬神殿</b><br><small>神道教 (主要提升VIT) | 需求: Lv.10, VIT 20</small></div><button class="btn-action" onclick="tryStartTrial('shinto')">試煉</button></div>`;
+        else c.innerHTML = `<h3>⛩️ ${dojoNames[player.path]}</h3><p>流派系統即將開放...</p>`;
     }
 }
 
-function saveGameWithFeedback() {
-    saveGame(true);
-    let btn = document.getElementById('btn-save-game');
-    if(btn) {
-        btn.innerText = "✔ 存檔成功";
-        btn.style.background = "var(--quest)";
-        setTimeout(() => {
-            btn.innerText = "手動存檔";
-            btn.style.background = "var(--cherry)";
-        }, 1500);
-    }
-}
-
-function innRest(cost) { 
+function innRest(cost) {
     if(player.hp >= getMaxHP()) return openModal("精神飽滿", "老闆看了看妳：「妳精神好得很，別來搗亂，快去打怪！」", "知道了");
-    if(player.gold >= cost) { 
-        player.gold -= cost; 
-        const btn = document.getElementById('btn-inn-rest');
-        const area = document.getElementById('inn-action-area');
-        btn.disabled = true;
-        isResting = true;
-        
-        let restSec = 5;
-        area.innerHTML = `<div style="color:var(--accent); font-size:1.3em; margin:10px 0;">💤 休息中... <span id="rest-timer">${restSec}</span></div>`;
-        
+    if(player.gold >= cost) {
+        player.gold -= cost; isResting = true; document.getElementById('btn-back-village').disabled = true;
+        let sec = 5; const area = document.getElementById('btn-inn-rest'); area.disabled = true;
         const timer = setInterval(() => {
-            restSec--;
-            const timerTxt = document.getElementById('rest-timer');
-            if(timerTxt) timerTxt.innerText = restSec;
-            if(restSec <= 0) {
-                clearInterval(timer);
-                isResting = false;
-                player.hp = getMaxHP();
-                log("🛌 在客棧沉沉睡去，精神百倍！", "var(--accent)");
-                updateUI();
-                openModal("✨ 休息完畢", "妳感到神清氣爽，體力已完全恢復！", "出發", () => showSubView('inn'));
-            }
+            sec--; area.innerText = `💤 休息中... ${sec}`;
+            if(sec <= 0) { clearInterval(timer); isResting = false; document.getElementById('btn-back-village').disabled = false; player.hp = getMaxHP(); updateUI(); area.innerText = "休息完畢"; openModal("✨ 休息完畢", "妳感到神清氣爽，體力已完全恢復！", "出發", () => showSubView('inn')); }
         }, 1000);
-    } else {
-        openModal("金幣不足", "客棧老闆無奈地搖了搖頭，請回吧。", "知道了");
-    }
-}
-
-function updateShopInvDisplay() {
-    let inv = document.getElementById('shop-inventory-display');
-    if(inv) inv.innerHTML = `<b>目前持有庫存：</b><br>薄濁之水: ${player.potions.p1} | 清流之露: ${player.potions.p2}<br>紫電神水: ${player.potions.p3} | 天照御神露: ${player.potions.p4}<br>不死御守: ${player.revives}`;
-}
-
-function changeGMStat(stat, val) {
-    if(stat === 'lvl') {
-        if(val > 0) { player.lvl += val; player.statPoints += 3; player.hp = getMaxHP(); }
-        else if(player.lvl > 1) { player.lvl += val; player.statPoints = Math.max(0, player.statPoints - 3); }
-    } else {
-        let minBound = stat === 'agi' ? 0 : (stat === 'str' ? 2 : 1);
-        if(player[stat] + val >= minBound) player[stat] += val;
-    }
-    if(stat === 'vit') player.hp = Math.min(getMaxHP(), player.hp);
-    updateUI();
-}
-
-function resetStats() {
-    let totalPoints = 5 + (player.lvl - 1) * 3;
-    player.str = 2; player.vit = 1; player.agi = 0;
-    player.lockedStats = { str: 2, vit: 1, agi: 0 };
-    player.statPoints = totalPoints;
-    player.hp = getMaxHP();
-    updateUI();
-    openModal("重置成功", "所有屬性點已退還，請重新分配。", "好的");
-}
-
-function buyBulkItem() {
-    let pid = document.getElementById('shop-potion-select').value;
-    let count = parseInt(document.getElementById('shop-buy-count').value);
-    if(isNaN(count) || count < 1) count = 1;
-    let unitCost = pid === 'rev' ? 5000 : potionData[pid].cost;
-    let totalCost = unitCost * count;
-    let maxAffordable = Math.floor(player.gold / unitCost);
-
-    if(player.gold >= totalCost) {
-        player.gold -= totalCost;
-        if(pid === 'rev') player.revives += count; else player.potions[pid] += count;
-        updateUI(); updateShopInvDisplay(); showSubView('shop');
-        log(`🛍️ 購買成功！獲得 x${count}`, "var(--quest)");
-    } else {
-        if(maxAffordable > 0) {
-            openModal("金幣不足", `妳的金幣最多只能購買 <b>${maxAffordable}</b> 個。<br>確定要將剩下的錢全部買入嗎？`, "確定購買", () => {
-                player.gold -= (unitCost * maxAffordable);
-                if(pid === 'rev') player.revives += maxAffordable; else player.potions[pid] += maxAffordable;
-                updateUI(); showSubView('shop');
-                log(`🛍️ 購買成功！獲得 x${maxAffordable}`, "var(--quest)");
-            }, true);
-        } else {
-            openModal("金幣不足", "妳的錢包連一個都買不起...", "知道了");
-        }
-    }
+    } else openModal("金幣不足", "客棧老闆無奈地搖了搖頭，請回吧。", "知道了");
 }
 
 function backToVillage() { document.getElementById('sub-view').classList.add('hidden'); document.getElementById('village-menu').classList.remove('hidden'); }
 function updateMapSelector() { const sel = document.getElementById('map-selector'); if(sel) { sel.innerHTML = ""; for(let i=0; i<=player.maxMapIdx; i++) sel.innerHTML += `<option value="${i}" ${player.mapIdx==i?'selected':''}>${maps[i].name}</option>`; } }
-function changeMap() { 
-    player.mapIdx = parseInt(document.getElementById('map-selector').value); 
-    player.kills=0; 
-    monster.hp = 0; 
-    spawn(); 
-}
+function changeMap() { player.mapIdx = parseInt(document.getElementById('map-selector').value); player.kills=0; monster.hp = 0; spawn(); }
 function manualBoss() { spawn(true); }
 function showDmg(tid, txt, col) { const b = document.getElementById(tid); if(!b) return; const e = document.createElement('div'); e.className='dmg-text'; e.innerText=txt; e.style.color=col; b.appendChild(e); setTimeout(()=>e.remove(), 800); }
-
-function log(m, color = "#888") { 
-    const l = document.getElementById('log'); 
-    l.innerHTML = `<span style="color:${color}">> ${m}</span><br>` + l.innerHTML; 
-}
+function log(m, color = "#888") { const l = document.getElementById('log'); l.innerHTML = `<span style="color:${color}">> ${m}</span><br>` + l.innerHTML; }
 
 function openModal(t,b,bt,cb,showCancel=false) { 
-    isPaused=true; if(battleTimer) clearTimeout(battleTimer);
-    document.getElementById('modal-title').innerText=t; 
-    document.getElementById('modal-body').innerHTML=b; 
-    const btn=document.getElementById('modal-confirm-btn'); btn.innerText=bt; 
+    isPaused=true; document.getElementById('modal-title').innerText=t; document.getElementById('modal-body').innerHTML=b;
+    const btn=document.getElementById('modal-confirm-btn'); btn.innerText=bt;
     const cBtn=document.getElementById('modal-cancel-btn'); cBtn.style.display=showCancel?'block':'none';
-    
     let isMainMenu = !document.getElementById('slot-screen').classList.contains('hidden');
-
-    cBtn.onclick=()=>{ 
-        document.getElementById('game-modal').style.display='none'; 
-        if(!isMainMenu) { isPaused=false; if(currentView==='battle') startBattleLoop(); }
-    };
-    btn.onclick=()=>{ 
-        if(cb && cb() === false) return; 
-        document.getElementById('game-modal').style.display='none'; 
-        if(!isMainMenu && currentView==='battle') { isPaused=false; startBattleLoop(); } 
-    }; 
+    btn.onclick=()=>{ if(cb && cb() === false) return; document.getElementById('game-modal').style.display='none'; if(!isMainMenu) { isPaused=false; if(currentView==='battle') startBattleLoop(); } };
+    cBtn.onclick=()=>{ document.getElementById('game-modal').style.display='none'; if(!isMainMenu) { isPaused=false; if(currentView==='battle') startBattleLoop(); } };
     document.getElementById('game-modal').style.display='flex'; 
 }
 
-window.onload = () => {
-    initSlotScreen();
-    setInterval(() => { if(!isPaused && currentSlotKey && player.name) saveGame(false); }, 5000);
-};
+window.onload = () => { initSlotScreen(); setInterval(() => { if(!isPaused && currentSlotKey && player.name) saveGame(false); }, 5000); };
 </script>
 </body>
 </html>
