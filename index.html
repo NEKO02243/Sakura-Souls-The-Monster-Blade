@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>永夜之境：宗師歸來 V0.2.2 (Stable)</title>
+    <title>永夜之境：宗師歸來 V0.2.4 (Stable)</title>
     <style>
         :root { --bg: #0a0a0f; --panel: #161622; --gold: #ffd700; --cherry: #ffb7c5; --accent: #70a1ff; --quest: #55efc4; --danger: #ff4757; --gm: #00cec9; }
         body { background: var(--bg); color: #e0e0e0; font-family: 'PingFang TC', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 0; margin: 0; overflow-x: hidden; }
@@ -52,9 +52,9 @@
         
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 100000; }
         .modal-content { background: #1c1c28; border: 2px solid var(--cherry); border-radius: 12px; padding: 30px; text-align: center; max-width: 450px; width: 90%; box-shadow: 0 0 20px rgba(255,183,197,0.2); }
-        .tab-btn { padding: 12px; background: #222; color: #888; border: none; cursor: pointer; flex: 1; font-weight: bold; }
+        .tab-btn { padding: 12px; background: #222; color: #888; border: none; cursor: pointer; flex: 1; font-weight: bold; transition: 0.3s; }
         .tab-btn.active { background: var(--panel); color: var(--cherry); border-top: 2px solid var(--cherry); }
-        .tab-btn:disabled { opacity: 0.5; cursor: not-allowed; color: #444; }
+        
         select, input[type="number"], textarea { background: #000; color: var(--gold); border: 1px solid var(--cherry); padding: 5px; border-radius: 5px; cursor: pointer; outline: none; text-align: center; }
         
         #naming-stat-alloc { background: #111; padding: 10px; border-radius: 8px; margin-top: 15px; border: 1px solid #333; }
@@ -74,7 +74,7 @@
         <div id="modal-body" style="margin: 20px 0; line-height: 1.6; color:#ddd; font-size:0.95em;"></div>
         
         <div id="naming-area" class="hidden">
-            <input type="text" id="player-name-input" placeholder="請輸入妳的名號 (留白為無名者)" style="padding:10px; text-align:center; background:#000; color:white; border:1px solid var(--cherry); width:80%; font-size:1.1em; margin-bottom:10px;">
+            <input type="text" id="player-name-input" placeholder="請輸入名號 (留白為無名者)" style="padding:10px; text-align:center; background:#000; color:white; border:1px solid var(--cherry); width:80%; font-size:1.1em; margin-bottom:10px;">
             <div id="naming-stat-alloc">
                 <p style="color:var(--gold); margin:5px 0; font-weight:bold;">修行初載：分配初始 5 點能力</p>
                 <div class="stat-alloc-grid" style="padding:10px; margin-top:0; background:transparent;">
@@ -118,7 +118,7 @@
 <div id="slot-screen">
     <div style="text-align: center; margin-bottom: 30px;">
         <h1 style="color:var(--cherry); margin-bottom: 5px;">⛩️ 永夜之境 ⛩️</h1>
-        <small style="color: #666; letter-spacing: 2px;">宗師歸來 V0.2.2 (Stable)</small>
+        <small style="color: #666; letter-spacing: 2px;">宗師歸來 V0.2.4 (Stable)</small>
     </div>
     <div id="slots-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
     <div style="margin-top: 30px; font-size: 0.85em; color: #888; text-align: center; line-height: 1.5;">
@@ -252,7 +252,7 @@
 
 <script>
 /* ==========================================================================
-⛩️ 《永夜之境：宗師歸來》 核心設定 V0.2.2 (Stable)
+⛩️ 《永夜之境：宗師歸來》 核心設定 V0.2.4 (Stable)
 ========================================================================== */
 
 const pathNames = { none: '流浪者', samurai: '武士', onmyoji: '陰陽師', shinto: '神道教' };
@@ -283,6 +283,7 @@ const defaultPlayer = {
     potions: { p1: 5, p2: 0, p3: 0, p4: 0 }, 
     selectedPotion: 'p1', autoHeal: 0, autoHealEnabled: false
 };
+// 📝 確保藥水等物件在深拷貝時完全獨立
 let player = JSON.parse(JSON.stringify(defaultPlayer));
 let monster = { name: "", hp: 0, mhp: 0, atk: 0, lvl: 1, isBoss: false };
 let isPaused = true;
@@ -293,7 +294,6 @@ let battleTimer = null;
 let trial = { active: false, type: '', progress: 0, timeLeft: 0, timer: null, healTimer: null, bossTimer: null, hits: 0 };
 let pendingDeleteKey = null;
 
-// 📝 配點預覽暫存
 let statPreview = { str: 0, vit: 0, agi: 0 };
 
 const initBaseStats = { str: 2, vit: 1, agi: 0 };
@@ -310,7 +310,7 @@ function initSlotScreen() {
                 let d = JSON.parse(s); 
                 card.innerHTML = `<button class="btn-del-slot" onclick="confirmDeleteSlot(event, '${key}')">刪除</button>
                     <div class="card-content">
-                        <h3 style="color:var(--cherry); margin-bottom:5px;">${d.name}</h3>
+                        <h3 style="color:var(--cherry); margin-bottom:5px;">${d.name || "無名者"}</h3>
                         <p style="margin:0;">Lv.${d.lvl} [${pathNames[d.path] || '流浪者'}]</p>
                     </div>`; 
             } catch(e) {}
@@ -349,31 +349,58 @@ function resetInitStats() {
 function loadGame() { 
     let s = localStorage.getItem(currentSlotKey); 
     if(s) {
-        let sd = JSON.parse(s); Object.assign(player, sd);
-        if(typeof player.potions === 'number') { player.potions = { p1: player.potions, p2: 0, p3: 0, p4: 0 }; }
+        let sd = JSON.parse(s); 
+        // 📝 防止舊存檔覆蓋掉預設藥水物件結構
+        if(!sd.potions || typeof sd.potions !== 'object') sd.potions = { p1: 5, p2: 0, p3: 0, p4: 0 };
+        Object.assign(player, sd);
+        
         if(player.selectedPotion === undefined) player.selectedPotion = 'p1';
         if(player.autoHeal === undefined) player.autoHeal = 0;
         if(player.autoHealEnabled === undefined) player.autoHealEnabled = false;
         if(!player.lockedStats) player.lockedStats = { str: player.str, vit: player.vit, agi: player.agi };
         if(player.lvl === 1 && player.exp < 30 && player.next === 100) player.next = 30;
+    } else {
+        // 確保新開局完全套用預設值
+        player = JSON.parse(JSON.stringify(defaultPlayer));
     }
+    
     initPotionSelect();
+    
     if(!player.name) { 
         document.getElementById('naming-area').classList.remove('hidden'); 
         resetInitStats();
         openModal("踏入輪迴", "名號一旦定下，便與靈魂綁定。請確認好您的修行天賦：", "開啟旅程", () => { 
             let n = document.getElementById('player-name-input').value.trim();
-            if(!n) n = "無名者";
+            if(n === "") n = "無名者"; // 📝 修復無名者判定
             if(player.statPoints > 0) { alert("請先分配完所有初始點數！"); return false; }
-            player.name = n; player.str = initAllocatedStats.str; player.vit = initAllocatedStats.vit; player.agi = initAllocatedStats.agi;
+            
+            player.name = n; 
+            player.str = initAllocatedStats.str; 
+            player.vit = initAllocatedStats.vit; 
+            player.agi = initAllocatedStats.agi;
             player.lockedStats = { str: player.str, vit: player.vit, agi: player.agi };
             player.hp = getMaxHP(); 
-            document.getElementById('naming-area').classList.add('hidden'); postLoadInit();
+            
+            document.getElementById('naming-area').classList.add('hidden'); 
+            postLoadInit();
         }); 
-    } else { postLoadInit(); } 
+    } else { 
+        postLoadInit(); 
+    } 
 }
 
-function postLoadInit() { updateMapSelector(); spawn(false); updateUI(); isPaused = false; if(player.name === "御雷神命") document.getElementById('card-gm').classList.remove('hidden'); if(currentView === 'battle') startBattleLoop(); }
+function postLoadInit() { 
+    updateMapSelector(); spawn(false); updateUI(); isPaused = false; 
+    
+    log("💡 【版本廣播】V0.2.4 已更新。修復無名者與藥水系統。", "var(--accent)");
+    if(player.lvl === 1 && player.exp === 0 && player.gold === 0 && player.potions.p1 === 5) {
+        log("🎁 新手物資已發放：薄濁之水 x5", "var(--quest)");
+    }
+    
+    if(player.name === "御雷神命") document.getElementById('card-gm').classList.remove('hidden'); 
+    if(currentView === 'battle') startBattleLoop(); 
+}
+
 function saveGame(manual) { player.lastSaveTime = Date.now(); localStorage.setItem(currentSlotKey, JSON.stringify(player)); if(manual) log("✔ 靈魂記憶已封存於石碑之中。", "var(--quest)"); }
 
 function generateImportCode() {
@@ -395,7 +422,13 @@ function promptImportCode() {
 
 function initPotionSelect() {
     const sel = document.getElementById('potion-select'); sel.innerHTML = "";
-    for(let k in potionData) sel.innerHTML += `<option value="${k}">${potionData[k].name} (+${Math.floor(potionData[k].rate * 100)}%)</option>`;
+    // 📝 安全檢查
+    if(!player.potions) player.potions = { p1: 5, p2: 0, p3: 0, p4: 0 };
+    
+    for(let k in potionData) {
+        let rateTxt = `(+${Math.floor(potionData[k].rate * 100)}%)`;
+        sel.innerHTML += `<option value="${k}">${potionData[k].name} ${rateTxt}</option>`;
+    }
     sel.value = player.selectedPotion;
     document.getElementById('auto-heal-input').value = Math.floor(player.autoHeal * 100);
     document.getElementById('auto-heal-check').checked = player.autoHealEnabled;
@@ -452,12 +485,14 @@ function beginTrial(type) {
     }
     spawnTrialMonster(); log("⚔️ 試煉正式開始！", "var(--cherry)");
 }
+
 function spawnTrialMonster() {
     if(trial.type === 'samurai') monster = { name: "【試煉】浪人", hp: 300, mhp: 300, atk: 15, lvl: 3, isBoss: true };
     if(trial.type === 'onmyoji') monster = { name: "【試煉】靈體", hp: 99999, mhp: 99999, atk: 15, lvl: 10, isBoss: true }; 
     if(trial.type === 'shinto') monster = { name: "【幻影】夜行鬼王", hp: 99999, mhp: 99999, atk: 0, lvl: 99, isBoss: true };
     updateUI();
 }
+
 function endTrial(success) {
     clearInterval(trial.timer); clearInterval(trial.healTimer); clearInterval(trial.bossTimer); trial.active = false;
     if (success) {
@@ -555,19 +590,19 @@ function updateVillageMenuCard() {
 }
 
 function updateUI() {
-    document.getElementById('p-name').innerText = player.name; document.getElementById('p-lvl').innerText = player.lvl;
+    document.getElementById('p-name').innerText = player.name || "無名者"; 
+    document.getElementById('p-display-name').innerText = player.name || "無名者"; 
+    document.getElementById('p-lvl').innerText = player.lvl;
     document.getElementById('p-path-text').innerText = pathNames[player.path]; document.getElementById('p-gold').innerText = player.gold.toLocaleString();
     document.getElementById('p-str-val').innerText = player.str; document.getElementById('p-vit-val').innerText = player.vit; document.getElementById('p-agi-val').innerText = player.agi;
     document.getElementById('stat-str').innerText = player.str; document.getElementById('stat-vit').innerText = player.vit; document.getElementById('stat-agi').innerText = player.agi;
     document.getElementById('stat-points').innerText = player.statPoints;
     
-    // 📝 預覽更新顯示
     ['str','vit','agi'].forEach(s => {
         let pEl = document.getElementById(`pre-${s}`);
         pEl.innerText = statPreview[s] > 0 ? `+${statPreview[s]}` : "";
     });
     
-    // 若有預覽點數，顯示「取消/確定」按鈕列
     document.getElementById('alloc-btns').classList.toggle('hidden', (statPreview.str + statPreview.vit + statPreview.agi) === 0);
 
     let def = getDefPercent(player.vit); let eva = getEvaPercent(player.agi, player.path);
@@ -584,12 +619,17 @@ function updateUI() {
     document.getElementById('m-hp-text').innerText = `${Math.floor(monster.hp)} / ${monster.mhp}`;
     
     document.querySelectorAll('.btn-plus').forEach(b => b.disabled = (player.statPoints <= 0 || isReviving));
-    document.getElementById('t-village').disabled = (player.autoBoss || monster.isBoss || trial.active);
     document.getElementById('auto-boss-check').checked = player.autoBoss;
+    
+    // 📝 藥水顯示防呆
+    let pCount = document.getElementById('potion-count');
+    if(pCount && player.potions && player.potions[player.selectedPotion] !== undefined) {
+        pCount.innerText = player.potions[player.selectedPotion];
+    } else if (pCount) { pCount.innerText = 0; }
+    
     updateVillageMenuCard();
 }
 
-// 📝 V0.2.2: 配點預覽邏輯函數
 function previewStat(t) { if(player.statPoints > 0) { player.statPoints--; statPreview[t]++; updateUI(); } }
 function cancelPreview() { player.statPoints += (statPreview.str + statPreview.vit + statPreview.agi); statPreview = { str: 0, vit: 0, agi: 0 }; updateUI(); }
 function confirmStats() {
@@ -597,7 +637,6 @@ function confirmStats() {
     player.vit += statPreview.vit; 
     player.agi += statPreview.agi;
     
-    // 如果有加體質，將當前血量按比例補回最大生命值的增量
     if(statPreview.vit > 0) {
         let hpGain = statPreview.vit * (player.path === 'shinto' ? 65 : 50);
         player.hp += hpGain;
@@ -611,9 +650,21 @@ function confirmStats() {
 
 function switchView(v) {
     if(isResting) return openModal("歇息中", "正在旅籠屋休息...", "等候");
-    if(trial.active || monster.isBoss || player.autoBoss) if(v !== 'battle') return openModal("鎖定中", "請先結束戰鬥或取消自動挑戰。", "繼續戰鬥");
-    currentView = v; document.getElementById('view-battle').classList.toggle('hidden', v !== 'battle'); document.getElementById('view-village').classList.toggle('hidden', v !== 'village');
-    if(v === 'battle') { isPaused = false; startBattleLoop(); } else { isPaused = true; }
+    if(trial.active || monster.isBoss || player.autoBoss) {
+        if(v !== 'battle') return openModal("鎖定中", "首領戰鬥或自動挑戰中，請先結束戰鬥或取消勾選。", "繼續戰鬥");
+    }
+    currentView = v; 
+    document.getElementById('view-battle').classList.toggle('hidden', v !== 'battle'); 
+    document.getElementById('view-village').classList.toggle('hidden', v !== 'village');
+    document.getElementById('t-battle').classList.toggle('active', v === 'battle'); 
+    document.getElementById('t-village').classList.toggle('active', v === 'village');
+    
+    if(v === 'battle') { 
+        isPaused = false; startBattleLoop(); 
+    } else { 
+        isPaused = true; 
+        backToVillage(); 
+    }
 }
 
 function showSubView(s) {
@@ -625,10 +676,28 @@ function showSubView(s) {
         <p>持有金幣：${player.gold} | 休息費用：${cost === 0 ? '<span style="color:var(--quest)">免費</span>' : cost}</p>
         <button class="btn-action" style="width:100%;" id="btn-inn-rest" onclick="innRest(${cost})">入內休息 (5秒)</button>`;
     } else if(s==='gm') {
-        c.innerHTML = `<h3>🛠️ GM控制台</h3><button onclick="player.gold+=10000; updateUI();">💰 +10,000</button> <button onclick="player.maxMapIdx=3; updateMapSelector();">🗺️ 全地圖</button>`;
+        c.innerHTML = `<h3>🛠️ GM 控制台</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px; text-align:left; font-size:0.9em; color:white;">
+            <div>等級: <input type="number" id="gm-lvl" value="${player.lvl}" style="width:60px;"></div>
+            <div>金幣: <input type="number" id="gm-gold" value="${player.gold}" style="width:60px;"></div>
+            <div>力量: <input type="number" id="gm-str" value="${player.str}" style="width:60px;"></div>
+            <div>體質: <input type="number" id="gm-vit" value="${player.vit}" style="width:60px;"></div>
+            <div>敏捷: <input type="number" id="gm-agi" value="${player.agi}" style="width:60px;"></div>
+            <div>點數: <input type="number" id="gm-pts" value="${player.statPoints}" style="width:60px;"></div>
+        </div>
+        <button class="btn-action" style="width:100%; margin-bottom:10px; background:var(--gm);" onclick="applyGM()">✅ 套用數值</button>
+        <button class="btn-action" style="width:100%; margin-bottom:15px; background:var(--gm);" onclick="player.maxMapIdx=maps.length-1; updateMapSelector(); openModal('解鎖成功', '已開啟所有荒野地圖！', '太棒了');">🗺️ 解鎖全部地圖</button>
+        <p style="font-size:0.9em; color:#aaa; margin-bottom:5px;">強制轉職：</p>
+        <div style="display:flex; gap:5px; justify-content:center;">
+            <button onclick="player.path='samurai'; updateUI();">武士</button>
+            <button onclick="player.path='onmyoji'; updateUI();">陰陽師</button>
+            <button onclick="player.path='shinto'; updateUI();">神道教</button>
+            <button onclick="player.path='none'; updateUI();">洗白</button>
+        </div>`;
     } else if(s==='save') {
-        c.innerHTML = `<h3>💾 紀錄點</h3><button class="btn-action" style="width:100%; margin-bottom:10px;" onclick="saveGameWithFeedback()" id="btn-save-game">手動存檔</button>
-        <button class="btn-action" style="width:100%; margin-bottom:10px; background:var(--accent);" onclick="generateImportCode()">📤 生成引繼碼 (自動複製)</button>
+        c.innerHTML = `<h3>💾 紀錄點</h3>
+        <button class="btn-action" style="width:100%; margin-bottom:15px;" id="btn-save-game" onclick="saveGameWithFeedback()">手動存檔</button>
+        <button class="btn-action" style="width:100%; margin-bottom:15px; background:var(--accent);" onclick="generateImportCode()">📤 生成引繼碼 (自動複製)</button>
         <button class="btn-action" style="width:100%; background:#e67e22;" onclick="promptImportCode()">📥 輸入引繼碼 (覆蓋此紀錄)</button>`;
     } else if(s==='shop') {
         let selHtml = `<select id="shop-potion-select" style="flex:2;">`;
@@ -646,6 +715,32 @@ function showSubView(s) {
     }
 }
 
+function applyGM() {
+    player.lvl = parseInt(document.getElementById('gm-lvl').value) || 1;
+    player.gold = parseInt(document.getElementById('gm-gold').value) || 0;
+    player.str = parseInt(document.getElementById('gm-str').value) || 2;
+    player.vit = parseInt(document.getElementById('gm-vit').value) || 1;
+    player.agi = parseInt(document.getElementById('gm-agi').value) || 0;
+    player.statPoints = parseInt(document.getElementById('gm-pts').value) || 0;
+    player.lockedStats = { str: player.str, vit: player.vit, agi: player.agi };
+    player.hp = getMaxHP();
+    updateUI();
+    log('🛠️ GM 數值已套用！', 'var(--gm)');
+}
+
+function saveGameWithFeedback() {
+    saveGame(true);
+    let btn = document.getElementById('btn-save-game');
+    if(btn) {
+        btn.innerText = "✔ 存檔成功";
+        btn.style.background = "var(--quest)";
+        setTimeout(() => {
+            btn.innerText = "手動存檔";
+            btn.style.background = "var(--cherry)";
+        }, 1500);
+    }
+}
+
 function innRest(cost) {
     if(player.hp >= getMaxHP()) return openModal("精神飽滿", "老闆看了看妳：「妳精神好得很，別來搗亂，快去打怪！」", "知道了");
     if(player.gold >= cost) {
@@ -656,6 +751,40 @@ function innRest(cost) {
             if(sec <= 0) { clearInterval(timer); isResting = false; document.getElementById('btn-back-village').disabled = false; player.hp = getMaxHP(); updateUI(); area.innerText = "休息完畢"; openModal("✨ 休息完畢", "妳感到神清氣爽，體力已完全恢復！", "出發", () => showSubView('inn')); }
         }, 1000);
     } else openModal("金幣不足", "客棧老闆無奈地搖了搖頭，請回吧。", "知道了");
+}
+
+function updateShopInvDisplay() {
+    let inv = document.getElementById('shop-inventory-display');
+    if(inv && player.potions) {
+        inv.innerHTML = `<b>目前持有庫存：</b><br>薄濁之水: ${player.potions.p1 || 0} | 清流之露: ${player.potions.p2 || 0}<br>紫電神水: ${player.potions.p3 || 0} | 天照御神露: ${player.potions.p4 || 0}<br>不死御守: ${player.revives}`;
+    }
+}
+
+function buyBulkItem() {
+    let pid = document.getElementById('shop-potion-select').value;
+    let count = parseInt(document.getElementById('shop-buy-count').value);
+    if(isNaN(count) || count < 1) count = 1;
+    let unitCost = pid === 'rev' ? 5000 : potionData[pid].cost;
+    let totalCost = unitCost * count;
+    let maxAffordable = Math.floor(player.gold / unitCost);
+
+    if(player.gold >= totalCost) {
+        player.gold -= totalCost;
+        if(pid === 'rev') player.revives += count; else player.potions[pid] += count;
+        updateUI(); updateShopInvDisplay(); showSubView('shop');
+        log(`🛍️ 購買成功！獲得 x${count}`, "var(--quest)");
+    } else {
+        if(maxAffordable > 0) {
+            openModal("金幣不足", `妳的金幣最多只能購買 <b>${maxAffordable}</b> 個。<br>確定要將剩下的錢全部買入嗎？`, "確定購買", () => {
+                player.gold -= (unitCost * maxAffordable);
+                if(pid === 'rev') player.revives += maxAffordable; else player.potions[pid] += maxAffordable;
+                updateUI(); showSubView('shop');
+                log(`🛍️ 購買成功！獲得 x${maxAffordable}`, "var(--quest)");
+            }, true);
+        } else {
+            openModal("金幣不足", "妳的錢包連一個都買不起...", "知道了");
+        }
+    }
 }
 
 function backToVillage() { document.getElementById('sub-view').classList.add('hidden'); document.getElementById('village-menu').classList.remove('hidden'); }
