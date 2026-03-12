@@ -52,7 +52,11 @@
         
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 100000; }
         .modal-content { background: #1c1c28; border: 2px solid var(--cherry); border-radius: 12px; padding: 30px; text-align: center; max-width: 450px; width: 90%; box-shadow: 0 0 20px rgba(255,183,197,0.2); }
-        .tab-btn { padding: 12px; background: #222; color: #888; border: none; cursor: pointer; flex: 1; font-weight: bold; transition: 0.3s; }
+        .tab-btn { 
+            padding: 12px; background: #222; color: #888; border: none; cursor: pointer; 
+            flex: 1; font-weight: bold; transition: 0.3s; 
+            user-select: none;
+        }
         .tab-btn.active { background: var(--panel); color: var(--cherry); border-top: 2px solid var(--cherry); }
         
         select, input[type="number"], textarea { background: #000; color: var(--gold); border: 1px solid var(--cherry); padding: 5px; border-radius: 5px; cursor: pointer; outline: none; text-align: center; }
@@ -221,9 +225,7 @@
         
         <div id="detailed-stats" style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.85em; display: flex; justify-content: space-around; color: #aaa; border: 1px solid #333;">
             <span title="物理傷害 (基礎+裝備)">🗡️ <span id="det-atk" style="color:white">0</span></span>
-            <span title="攻擊間隔">⚡ <span id="det-spd" style="color:white">0</span>s</span>
-            <span title="物理減傷率 (基礎+裝備)">🛡️ <span id="det-def" style="color:white">0</span>%</span>
-            <span title="閃避機率 (基礎+裝備)">🍃 <span id="det-eva" style="color:white">0</span>%</span>
+            <span title="攻擊間隔">⚡ <span id="det-spd" style="color:white">0</span></span> <span title="物理減傷率 (基礎+裝備)">🛡️ <span id="det-def" style="color:white">0</span></span> <span title="閃避機率 (基礎+裝備)">🍃 <span id="det-eva" style="color:white">0</span></span> 
         </div>
 
         <div style="text-align:center; margin-top:10px;">
@@ -277,11 +279,11 @@ const potionData = { p1: { name: '薄濁之水', cost: 20, rate: 0.3 }, p2: { na
 const matData = { m0: { name: '妖化鐵砂', val: 2 }, m1: { name: '竹妖的韌皮', val: 5 }, m2: { name: '怨念的木片', val: 15 }, m3: { name: '染血的破傘', val: 35 }, m4: { name: '雷精的碎核', val: 80 } };
 
 const skillDB = {
-    'agi_combo1': { id: 'agi_combo1', name: '速擊', type: 'passive', desc: '攻擊時10%機率造成1.5倍傷害', color: 'cyan' },
-    'agi_combo2': { id: 'agi_combo2', name: '殘影', type: 'passive', desc: '攻擊時10%機率觸發二連擊', color: 'cyan' },
-    'vit_strike': { id: 'vit_strike', name: '剛力震擊', type: 'active', desc: '造成(攻擊+體質x2)的傷害', cd: 8, color: '#e67e22' },
-    'vit_thorns': { id: 'vit_thorns', name: '震怒', type: 'passive', desc: '受傷時20%機率反彈所有傷害', color: 'var(--cherry)' },
-    'str_cleave': { id: 'str_cleave', name: '破甲重劈', type: 'active', desc: '造成2.5倍傷害，且無視防禦', cd: 10, color: 'var(--danger)' }
+    'agi_combo1': { id: 'agi_combo1', name: '速擊', type: 'passive', desc: '攻擊時10%機率造成1.5倍傷害', color: '#70a1ff' },
+    'agi_combo2': { id: 'agi_combo2', name: '殘影', type: 'passive', desc: '攻擊時10%機率觸發二連擊', color: '#70a1ff' },
+    'vit_strike': { id: 'vit_strike', name: '剛力震擊', type: 'active', desc: '造成(攻擊+體質x2)的傷害', cd: 8, color: '#e1b12c' },
+    'vit_thorns': { id: 'vit_thorns', name: '震怒', type: 'passive', desc: '受傷時20%機率反彈所有傷害', color: '#e1b12c' },
+    'str_cleave': { id: 'str_cleave', name: '破甲重劈', type: 'active', desc: '造成2.5倍傷害，且無視防禦', cd: 10, color: '#ff4757' }
 };
 
 // 📝 策略條件清單
@@ -303,7 +305,9 @@ const defaultPlayer = {
     selectedPotion: 'p1', autoHeal: 0, autoHealEnabled: false,
     unlockedSkills: [], 
     equippedSkills: [null, null, null, null],
-    skillGambits: [0, 0, 0, 0] // 📝 新增策略條件陣列
+    skillGambits: [0, 0, 0, 0], 
+    skillGambitValues: [50, 50, 50, 50], 
+    skillGambitOps: ['<', '<', '<', '<']
 };
 
 let player = JSON.parse(JSON.stringify(defaultPlayer));
@@ -377,6 +381,11 @@ function loadGame() {
             player.unlockedSkills = sd.unlockedSkills || [];
             player.equippedSkills = sd.equippedSkills || [null, null, null, null];
             player.skillGambits = sd.skillGambits || [0, 0, 0, 0];
+            
+            // --- 這是新加的兩行，用來相容舊存檔 ---
+            player.skillGambitValues = sd.skillGambitValues || [50, 50, 50, 50];
+            player.skillGambitOps = sd.skillGambitOps || ['<', '<', '<', '<'];
+            
             Object.assign(player, sd);
             
             if(player.maxMapIdx < 1) player.maxMapIdx = 1; 
@@ -410,7 +419,7 @@ function loadGame() {
 
 function postLoadInit() { 
     updateMapSelector(); spawn(false); updateUI(); isPaused = false; 
-    log("💡 【V0.2.2 更新公告】：技能功能重新設計，新增木樁掛機練功功能，無傷安心掛機", "var(--accent)");
+    log("💡 【V0.2.2 策略版】：HP壓縮戰鬥加速，技能策略引擎已啟動！", "var(--accent)");
     if(player.lvl === 1 && player.exp === 0 && player.gold === 0 && player.potions.p1 === 5) {
         log("🎁 新手物資已發放：薄濁之水 x5", "var(--quest)");
     }
@@ -418,7 +427,16 @@ function postLoadInit() {
     if(currentView === 'battle') startBattleLoop(); 
 }
 
-function saveGame(manual) { player.lastSaveTime = Date.now(); localStorage.setItem(currentSlotKey, JSON.stringify(player)); if(manual) log("✔ 靈魂記憶已封存於石碑之中。", "var(--quest)"); }
+function saveGame(manual) { 
+    // 【修改】如果正在配點預覽中，禁止存檔行為，避免數據衝突
+    if (statPreview.str > 0 || statPreview.vit > 0 || statPreview.agi > 0) {
+        if(manual) log("⚠️ 請先確定或取消配點後再進行存檔。", "var(--danger)");
+        return; 
+    }
+    player.lastSaveTime = Date.now(); 
+    localStorage.setItem(currentSlotKey, JSON.stringify(player)); 
+    if(manual) log("✔ 靈魂記憶已封存於石碑之中。", "var(--quest)"); 
+}
 
 function logoutGame() { saveGame(false); location.reload(); }
 
@@ -546,10 +564,23 @@ function hasPassive(sid) { return player.equippedSkills.includes(sid); }
 // 📝 V0.2.2 檢查策略條件是否滿足
 function checkGambit(idx) {
     let g = player.skillGambits[idx];
-    if(g === 0) return true; // 無條件
-    if(g === 1 && (player.hp / getMaxHP()) < 0.5) return true; // 我方HP < 50%
-    if(g === 2 && monster.mhp > 0 && (monster.hp / monster.mhp) > 0.5) return true; // 敵方HP > 50%
-    if(g === 3 && monster.isBoss) return true; // 僅對首領
+    let val = player.skillGambitValues[idx];
+    let op = player.skillGambitOps[idx];
+
+    if(g === 0) return true; // 始終施放
+    
+    // --- 補上首領判斷 ---
+    if(g === 3) return monster.isBoss === true;
+
+    if(g === 4) { // 我方 HP 判定
+        let curPct = (player.hp / getMaxHP()) * 100;
+        return op === '<' ? curPct < val : curPct > val;
+    }
+    if(g === 5) { // 敵方 HP 判定
+        if (monster.mhp <= 0) return false;
+        let curPct = (monster.hp / monster.mhp) * 100;
+        return op === '<' ? curPct < val : curPct > val;
+    }
     return false;
 }
 
@@ -577,12 +608,13 @@ function startBattleLoop() {
     let crit = Math.min(80, 5 + (player.str * 0.15));
     let isCrit = Math.random() * 100 < crit; if(isCrit) pDmg = Math.floor(pDmg * 1.5);
     
-    // 📝 自動施放主動技能 (套用策略引擎)
+    // 📝 自動施放主動技能 (不再受 autoBoss 勾選限制)
     let skillUsed = false;
-    if(player.autoBoss && (!isDummy ? monster.hp > 0 : true)) {
+    if(!isDummy ? monster.hp > 0 : true) {
         for(let i=0; i<4; i++) {
             let sid = player.equippedSkills[i];
             if(sid && skillDB[sid].type === 'active' && combatState.skillCds[i] <= 0) {
+                // 直接檢查妳設定的策略條件 (Gambit)
                 if(checkGambit(i)) {
                     if(executeSkill(i)) { skillUsed = true; break; }
                 }
@@ -617,16 +649,19 @@ function startBattleLoop() {
             combatState.mobAtkTimer -= tickSec;
             if (combatState.mobAtkTimer <= 0) {
                 combatState.mobAtkTimer = 2.0; 
-                let mEva = maps[player.mapIdx].eva || 0;
-                let hitChance = 100 - (mEva * 100) + getEvaPercent(player.agi); 
                 
-                if (Math.random() * 100 <= hitChance) {
+                // 修正後的閃避邏輯
+                let myEva = getEvaPercent(player.agi);
+                let hitRoll = Math.random() * 100;
+
+                if (hitRoll > myEva) {
                     let mDmg = Math.max(1, Math.floor(monster.atk * (1 - getDefPercent(player.vit) / 100)));
                     if(hasPassive('vit_thorns') && Math.random() < 0.20 && mDmg > 1) {
                         monster.hp -= mDmg;
                         showDmg('m-box', `反震 ${mDmg}`, 'var(--cherry)');
                     }
-                    player.hp -= mDmg; showDmg('p-box', mDmg, '#ff4757');
+                    player.hp -= mDmg; 
+                    showDmg('p-box', mDmg, '#ff4757');
                 } else {
                     showDmg('p-box', "MISS", 'skyblue');
                 }
@@ -785,34 +820,56 @@ function updateUI() {
     if(el('stat-points')) el('stat-points').innerText = player.statPoints;
     if(el('alloc-btns')) el('alloc-btns').classList.toggle('hidden', (statPreview.str + statPreview.vit + statPreview.agi) === 0);
 
-    if(el('det-atk')) el('det-atk').innerText = getAtkVal(); 
-    if(el('det-spd')) el('det-spd').innerText = (Math.max(200, 1500 - player.agi * 15) / 1000).toFixed(2);
-    if(el('det-def')) el('det-def').innerText = getDefPercent(player.vit).toFixed(1); 
-    if(el('det-eva')) el('det-eva').innerText = getEvaPercent(player.agi).toFixed(1);
+    // --- 詳細數值預覽計算邏輯 (修正重影) ---
+    let curAtk = Math.floor(player.str * 1.5) + ((player.gear.arms || 0) * 3);
+    let curSpd = (Math.max(200, 1500 - player.agi * 15) / 1000).toFixed(2);
+    let curDef = (Math.min(90, (player.vit <= 100 ? player.vit * 0.5 : player.vit <= 300 ? 50 + (player.vit - 100) * 0.1 : 70 + (player.vit - 300) * 0.05) + ((player.gear.body || 0) * 1.5))).toFixed(1);
+    let curEva = (Math.min(60, (player.agi <= 100 ? player.agi * 0.5 : player.agi <= 300 ? 50 + (player.agi - 100) * 0.1 : 70 + (player.agi - 300) * 0.05) + ((player.gear.legs || 0) * 1.0))).toFixed(1);
 
+    let tempStr = player.str + statPreview.str;
+    let tempVit = player.vit + statPreview.vit;
+    let tempAgi = player.agi + statPreview.agi;
+
+    if(el('det-atk')) {
+        let nAtk = Math.floor(tempStr * 1.5) + ((player.gear.arms || 0) * 3);
+        let diff = nAtk - curAtk;
+        el('det-atk').innerHTML = `${curAtk}${diff > 0 ? ` <span style="color:lime; font-size:0.9em;">+${diff}</span>` : ""}`;
+    }
+    if(el('det-spd')) {
+        let nSpd = (Math.max(200, 1500 - tempAgi * 15) / 1000).toFixed(2);
+        let diff = (nSpd - curSpd).toFixed(2);
+        el('det-spd').innerHTML = `${curSpd}${diff < 0 ? ` <span style="color:var(--accent); font-size:0.9em;">${diff}</span>` : ""}s`;
+    }
+    if(el('det-def')) {
+        let nDefVal = tempVit <= 100 ? tempVit * 0.5 : tempVit <= 300 ? 50 + (tempVit - 100) * 0.1 : 70 + (tempVit - 300) * 0.05;
+        let nDef = Math.min(90, nDefVal + ((player.gear.body || 0) * 1.5)).toFixed(1);
+        let diff = (nDef - curDef).toFixed(1);
+        el('det-def').innerHTML = `${curDef}${diff > 0 ? ` <span style="color:lime; font-size:0.9em;">+${diff}</span>` : ""}%`;
+    }
+    if(el('det-eva')) {
+        let nEvaVal = tempAgi <= 100 ? tempAgi * 0.5 : tempAgi <= 300 ? 50 + (tempAgi - 100) * 0.1 : 70 + (tempAgi - 300) * 0.05;
+        let nEva = Math.min(60, nEvaVal + ((player.gear.legs || 0) * 1.0)).toFixed(1);
+        let diff = (nEva - curEva).toFixed(1);
+        el('det-eva').innerHTML = `${curEva}${diff > 0 ? ` <span style="color:lime; font-size:0.9em;">+${diff}</span>` : ""}%`;
+    }
+
+    // --- 血量與經驗條更新 ---
     if(el('p-hp-bar')) el('p-hp-bar').style.width = (player.hp / getMaxHP() * 100) + "%";
     if(el('p-hp-text')) el('p-hp-text').innerText = `${Math.floor(player.hp)} / ${getMaxHP()}`;
     if(el('p-exp-bar')) el('p-exp-bar').style.width = (player.exp / player.next * 100) + "%";
     if(el('p-exp-text')) el('p-exp-text').innerText = `${player.exp} / ${player.next}`;
     
     if(el('m-name')) el('m-name').innerHTML = monster.name;
-    
     let mHpBar = el('m-hp-bar');
     let mHpText = el('m-hp-text');
     let mSubInfo = el('m-sub-info');
     
     if(player.mapIdx === 0) {
-        if(mHpBar) {
-            mHpBar.className = 'zen-fill';
-            mHpBar.style.width = (combatState.zenTimer / 20 * 100) + "%";
-        }
+        if(mHpBar) { mHpBar.className = 'zen-fill'; mHpBar.style.width = (combatState.zenTimer / 20 * 100) + "%"; }
         if(mHpText) mHpText.innerText = "冥想中...";
         if(mSubInfo) mSubInfo.innerHTML = `累積威力: <span style="color:var(--gold)">${combatState.zenDmgAccum}</span>`;
     } else {
-        if(mHpBar) {
-            mHpBar.className = 'hp-fill';
-            mHpBar.style.width = (monster.mhp > 0 ? (monster.hp / monster.mhp * 100) : 0) + "%";
-        }
+        if(mHpBar) { mHpBar.className = 'hp-fill'; mHpBar.style.width = (monster.mhp > 0 ? (monster.hp / monster.mhp * 100) : 0) + "%"; }
         if(mHpText) mHpText.innerText = `${Math.floor(monster.hp)} / ${monster.mhp}`;
         if(mSubInfo) mSubInfo.innerHTML = `Lv. <span id="m-lvl">${monster.lvl}</span>`;
     }
@@ -834,6 +891,7 @@ function updateUI() {
     let mInfo = el('map-info');
     if(mInfo && mInfo.innerHTML === "") updateMapSelector();
     
+    // --- 技能快捷列更新 (含戰策待機變暗) ---
     if(player.equippedSkills) {
         for(let i=0; i<4; i++) {
             let slotEl = el(`slot-${i}`);
@@ -842,9 +900,15 @@ function updateUI() {
             if(!sid || !skillDB[sid]) {
                 slotEl.className = "skill-slot empty"; 
                 slotEl.innerHTML = "空 <small style='font-size:0.7em'>(點擊裝備)</small>";
+                slotEl.style.opacity = "1.0";
             } else {
                 let sk = skillDB[sid];
                 let isAct = sk.type === 'active';
+                
+                // 檢查戰策條件
+                let isGambitReady = isAct ? checkGambit(i) : true;
+                slotEl.style.opacity = (isAct && !isGambitReady) ? "0.4" : "1.0"; 
+                
                 slotEl.className = `skill-slot ${isAct ? 'active' : 'passive'}`;
                 let html = `<b style="color:${sk.color}">${sk.name}</b>`;
                 if(isAct && combatState.skillCds[i] > 0) {
@@ -855,7 +919,6 @@ function updateUI() {
             }
         }
     }
-
     updateVillageMenuCard();
 }
 
@@ -942,7 +1005,7 @@ function renderPath() {
     const c = el('sub-content');
     if(!c) return;
     
-    let html = `<h3>📜 秘技捲軸</h3><p style="font-size:0.85em; color:#aaa;">點擊槽位解除裝備，點擊下方清單裝備。<br>主動技能可設定<b style="color:var(--quest)">自動施放條件</b>。</p>`;
+    let html = `<h3>📜 秘技捲軸</h3><p style="font-size:0.85em; color:#aaa;">設定主動技能的施放戰術。</p>`;
     
     html += `<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin-bottom:15px;">`;
     for(let i=0; i<4; i++) {
@@ -951,60 +1014,127 @@ function renderPath() {
             let sk = skillDB[sid];
             let isAct = sk.type === 'active';
             
-            // 條件選單 HTML
-            let gambitHtml = "";
+            let tacticHtml = "";
             if (isAct) {
-                let opts = gambitOptions.map(g => `<option value="${g.val}" ${player.skillGambits[i] === g.val ? 'selected' : ''}>${g.text}</option>`).join('');
-                gambitHtml = `<select style="width:95%; font-size:0.7em; margin-top:5px; padding:2px;" onchange="updateGambit(${i}, this.value)">${opts}</select>`;
+                // 1. 選擇條件 (無/僅首領/我方/敵方)
+                tacticHtml = `<div style="margin-top:5px; border-top:1px solid #444; padding-top:5px;">
+                    <select style="width:100%; font-size:0.75em; background:#000; color:white; border:1px solid #666;" onchange="updateGambit(${i}, this.value)">
+                        <option value="0" ${player.skillGambits[i]==0?'selected':''}>始終施放</option>
+                        <option value="3" ${player.skillGambits[i]==3?'selected':''}>僅對首領</option>
+                        <option value="4" ${player.skillGambits[i]==4?'selected':''}>我方 HP</option>
+                        <option value="5" ${player.skillGambits[i]==5?'selected':''}>敵方 HP</option>
+                    </select>`;
+                
+                // 2. 如果選了 HP 相關，顯示符號與數值
+                if(player.skillGambits[i] >= 4) {
+                    tacticHtml += `<div style="display:flex; align-items:center; justify-content:center; gap:4px; margin-top:3px;">
+                        <span style="cursor:pointer; font-size:1em; width:20px; background:#333; color:var(--gold); border-radius:3px; display:inline-block; user-select:none;" 
+                              onclick="toggleGambitOp(${i})">
+                            ${player.skillGambitOps[i] === '<' ? '&lt;' : '&gt;'}
+                        </span>
+                        <input type="number" value="${player.skillGambitValues[i]}" 
+                               style="width:38px; font-size:0.75em; background:#000; color:white; border:1px solid #555;" 
+                               onchange="updateGambitVal(${i}, this.value)">
+                        <span style="font-size:0.7em;">%</span>
+                    </div>`;
+                }
+                tacticHtml += `</div>`;
             }
 
-            html += `<div style="background:#222; border:1px solid ${isAct?'var(--skill)':'var(--passive)'}; border-radius:5px; padding:10px 5px; text-align:center; font-size:0.8em; cursor:pointer;">
-                <div onclick="unequipSkill(${i})"><b>${sk.name}</b><br><small style="color:#aaa;">(點擊解除)</small></div>
-                ${gambitHtml}
+            html += `<div style="background:#222; border:1px solid ${isAct?'var(--skill)':'var(--passive)'}; border-radius:5px; padding:8px 4px; text-align:center; font-size:0.8em;">
+                <div onclick="unequipSkill(${i})" style="cursor:pointer;"><b>${sk.name}</b><br><small style="color:#666;">(解除)</small></div>
+                ${tacticHtml}
             </div>`;
         } else {
-            html += `<div style="background:#111; border:1px dashed #555; border-radius:5px; padding:10px 5px; text-align:center; font-size:0.8em; color:#666;">槽位 ${i+1}</div>`;
+            html += `<div style="background:#111; border:1px dashed #555; border-radius:5px; padding:10px 5px; text-align:center; font-size:0.8em; color:#666;">空</div>`;
         }
     }
     
-    html += `</div><p style="font-size:0.9em; color:var(--gold);">已領悟的秘技：</p><div style="display:flex; flex-direction:column; gap:8px; text-align:left; height:200px; overflow-y:auto; padding-right:5px;">`;
+    html += `</div><p style="font-size:0.9em; color:var(--gold);">已領悟的秘技：</p><div style="display:flex; flex-direction:column; gap:8px; text-align:left; height:200px; overflow-y:auto;">`;
     
     if(!player.unlockedSkills || player.unlockedSkills.length === 0) {
-        html += `<div style="color:#666; text-align:center;">尚無領悟任何秘技... 嘗試提升屬性吧！</div>`;
+        html += `<div style="color:#666; text-align:center;">尚無領悟...</div>`;
     } else {
         player.unlockedSkills.forEach(sid => {
             let sk = skillDB[sid];
-            if(!sk) return;
             let isEq = player.equippedSkills.includes(sid);
-            html += `<div style="background:#1a1a2e; padding:10px; border-left:4px solid ${sk.type==='active'?'var(--skill)':'var(--passive)'}; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
-                <div><b style="color:${sk.color};">${sk.name}</b> <small style="color:#aaa;">(${sk.type==='active'?'主動':'被動'})</small><br><small style="color:#ddd;">${sk.desc}</small></div>
+            html += `<div style="background:#1a1a2e; padding:10px; border-left:4px solid ${sk.type==='active'?'var(--skill)':'var(--passive)'}; border-radius:4px; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <div><b style="color:${sk.color};">${sk.name}</b><br><small style="color:#ddd;">${sk.desc}</small></div>
                 <button class="btn-action" style="padding:4px 10px; font-size:0.8em; background:${isEq?'#444':'var(--quest)'}; color:${isEq?'#888':'black'};" ${isEq?'disabled':''} onclick="equipSkill('${sid}')">${isEq?'已裝備':'裝備'}</button>
             </div>`;
         });
     }
-    html += `</div>`;
-    c.innerHTML = html;
+    c.innerHTML = html + `</div>`;
 }
 
 // 更新策略條件
+// 1. 處理戰術模式切換 (始終/我方HP/敵方HP)
 function updateGambit(slotIdx, val) {
     player.skillGambits[slotIdx] = parseInt(val);
-    log(`⚙️ 技能條件已更新。`, "#aaa");
+    renderPath(); // 這裡最重要：重新繪製介面，輸入框才會彈出來
+    updateUI();   
+    saveGame(false); // 自動存檔設定
+}
+
+// 2. 處理數值輸入 (0~100%)
+function updateGambitVal(idx, val) {
+    let n = parseInt(val);
+    if(isNaN(n)) n = 0;
+    player.skillGambitValues[idx] = Math.max(0, Math.min(100, n));
+    saveGame(false);
+}
+
+// 3. 處理符號切換 ( < 或 > )
+function updateGambitOp(idx, op) {
+    player.skillGambitOps[idx] = op;
+    saveGame(false);
+}
+
+// 點擊切換 < 或 >
+function toggleGambitOp(idx) {
+    // 點擊反轉運算子
+    player.skillGambitOps[idx] = (player.skillGambitOps[idx] === '<') ? '>' : '<';
+    renderPath(); // 重新整理 UI 顯示新符號
+    saveGame(false);
 }
 
 function equipSkill(sid) {
     let emptyIdx = player.equippedSkills.indexOf(null);
     if(emptyIdx !== -1) { 
         player.equippedSkills[emptyIdx] = sid; 
-        player.skillGambits[emptyIdx] = 0; // 預設無條件
-        renderPath(); updateUI(); 
+        
+        // 初始化戰策設定，防止報錯
+        if (!player.skillGambits) player.skillGambits = [0, 0, 0, 0];
+        if (!player.skillGambitValues) player.skillGambitValues = [50, 50, 50, 50];
+        if (!player.skillGambitOps) player.skillGambitOps = ['<', '<', '<', '<'];
+        
+        player.skillGambits[emptyIdx] = 0;
+        player.skillGambitValues[emptyIdx] = 50; 
+        player.skillGambitOps[emptyIdx] = '<';
+        
+        renderPath(); 
+        updateUI(); 
+        log(`📜 已裝備秘技：${skillDB[sid].name}`, "var(--quest)");
+        saveGame(false);
     }
-    else alert("技能槽已滿！請先點擊上方槽位解除裝備。");
+    else {
+        openModal("槽位已滿", "請先點擊上方已裝備的秘技來解除裝備。", "知道了");
+    }
 }
+
 function unequipSkill(idx) { 
     player.equippedSkills[idx] = null; 
     player.skillGambits[idx] = 0;
-    resetCombatState(); renderPath(); updateUI(); 
+    
+    // 強制重置戰鬥狀態（防止解除後技能還在跑 CD）
+    combatState.skillCds[idx] = 0; 
+    
+    // 同時刷新「捲軸分頁」與「戰鬥主介面」
+    renderPath(); 
+    updateUI();   
+    
+    log("📜 已解除秘技裝備。", "#aaa");
+    saveGame(false);
 }
 
 function applyGM() {
