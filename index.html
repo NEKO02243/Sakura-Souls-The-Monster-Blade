@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>永夜之境：宗師歸來 V0.2.3 (測試版)</title>
+    <title>永夜之境：宗師歸來 V0.4.0 (神啟與血契版)</title>
     <style>
         :root { --bg: #0a0a0f; --panel: #161622; --gold: #ffd700; --cherry: #ffb7c5; --accent: #70a1ff; --quest: #55efc4; --danger: #ff4757; --gm: #00cec9; --mat: #e1b12c; --skill: #9b59b6; --passive: #f39c12; }
         body { background: var(--bg); color: #e0e0e0; font-family: 'PingFang TC', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 0; margin: 0; overflow-x: hidden; }
@@ -52,11 +52,7 @@
         
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 100000; }
         .modal-content { background: #1c1c28; border: 2px solid var(--cherry); border-radius: 12px; padding: 30px; text-align: center; max-width: 450px; width: 90%; box-shadow: 0 0 20px rgba(255,183,197,0.2); }
-        .tab-btn { 
-            padding: 12px; background: #222; color: #888; border: none; cursor: pointer; 
-            flex: 1; font-weight: bold; transition: 0.3s; 
-            user-select: none;
-        }
+        .tab-btn { padding: 12px; background: #222; color: #888; border: none; cursor: pointer; flex: 1; font-weight: bold; transition: 0.3s; user-select: none; }
         .tab-btn.active { background: var(--panel); color: var(--cherry); border-top: 2px solid var(--cherry); }
         
         select, input[type="number"], textarea { background: #000; color: var(--gold); border: 1px solid var(--cherry); padding: 5px; border-radius: 5px; cursor: pointer; outline: none; text-align: center; }
@@ -66,14 +62,31 @@
         #revive-timer-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; z-index: 200; padding: 10px; box-sizing: border-box; }
         .death-tip { font-size: 0.8em; color: var(--gold); margin-top: 15px; line-height: 1.4; font-style: italic; background: rgba(0,0,0,0.4); padding: 8px; border-radius: 5px; }
 
-        .skill-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
-        .skill-slot { background: #111; border: 2px dashed #444; border-radius: 8px; height: 50px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.8em; color: #666; position: relative; overflow: hidden; user-select: none; transition: 0.2s; }
-        .skill-slot.active { border: 2px solid var(--skill); color: #fff; cursor: pointer; }
-        .skill-slot.passive { border: 2px solid var(--passive); color: #fff; }
-        .skill-slot.empty { cursor: pointer; }
+        /* 縮小版技能列聯動設計 */
+        .skill-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 15px; }
+        .skill-slot { background: #111; border: 1px dashed #444; border-radius: 6px; height: 35px; display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 0.75em; color: #666; position: relative; overflow: hidden; user-select: none; transition: 0.2s; cursor: pointer; }
+        .skill-slot.active { border: 1px solid var(--skill); color: #fff; }
+        .skill-slot.passive { border: 1px solid var(--passive); color: #fff; }
         .skill-slot.empty:hover { border-color: var(--quest); color: var(--quest); }
-        .skill-slot:hover.active { background: #222; transform: scale(1.05); }
-        .skill-cd-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.7); color: var(--gold); font-weight: bold; display: flex; align-items: center; justify-content: center; height: 100%; pointer-events: none; transition: height 0.1s linear; }
+        .skill-slot:hover.active { background: #222; transform: scale(1.02); }
+        .skill-cd-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.7); color: var(--gold); font-weight: bold; display: flex; align-items: center; justify-content: center; height: 100%; pointer-events: none; transition: height 0.1s linear; font-size:0.9em; }
+
+        /* 🎒 背包、Log與秘技 (四個分頁調整) */
+        .log-inv-tabs { display: flex; gap: 5px; margin-top: 15px; border-bottom: 2px solid #333; }
+        .li-tab { flex:1; text-align:center; padding: 10px 2px; font-size: 0.9em; background: #111; color: #666; cursor: pointer; border-radius: 5px 5px 0 0; border: 1px solid transparent; border-bottom: none; margin-bottom: -2px; z-index: 10; font-weight: bold; }
+        .li-tab.active { background: #000; color: var(--gold); border-color: #333; }
+        .li-content-box { height: 220px; overflow-y: auto; background: #000; padding: 12px; border-radius: 0 5px 5px 5px; border: 1px solid #333; font-size: 14px; color: #888; }
+        
+        .inv-filter { display: flex; gap: 5px; margin-bottom: 12px; }
+        .f-btn { background: #222; border: none; color: #aaa; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.9em; }
+        .f-btn.active { background: var(--accent); color: #000; font-weight: bold; }
+        .inv-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #111; border-radius: 5px; margin-bottom: 8px; border-left: 3px solid #555; }
+        .inv-row.rec { border-left-color: var(--quest); }
+        .inv-row.mat { border-left-color: var(--mat); }
+        .inv-row.oth { border-left-color: var(--cherry); }
+        
+        .bag-qty-input { background: #000; border: 1px solid #444; color: var(--gold); border-radius: 3px; padding: 4px; width: 45px; text-align: center; margin-left: 5px; box-sizing: border-box; }
+        .bag-check { accent-color: var(--gold); transform: scale(1.2); cursor: pointer; }
     </style>
 </head>
 <body>
@@ -81,7 +94,7 @@
 <div id="game-modal" class="modal">
     <div class="modal-content">
         <h2 id="modal-title" style="color:var(--gold); margin-top:0;"></h2>
-        <div id="modal-body" style="margin: 20px 0; line-height: 1.6; color:#ddd; font-size:0.95em;"></div>
+        <div id="modal-body" style="margin: 20px 0; line-height: 1.6; color:#ddd; font-size:1.05em;"></div>
         
         <div id="naming-area" class="hidden">
             <input type="text" id="player-name-input" placeholder="請輸入名號 (留白為無名者)" style="padding:10px; text-align:center; background:#000; color:white; border:1px solid var(--cherry); width:80%; font-size:1.1em; margin-bottom:10px;">
@@ -120,7 +133,7 @@
 <div id="slot-screen">
     <div style="text-align: center; margin-bottom: 30px;">
         <h1 style="color:var(--cherry); margin-bottom: 5px;">⛩️ 永夜之境 ⛩️</h1>
-        <small style="color: #666; letter-spacing: 2px;">宗師歸來 V0.2.3 (測試版)</small>
+        <small style="color: #666; letter-spacing: 2px;">宗師歸來 V0.4.0 (神啟與血契版)</small>
     </div>
     <div id="slots-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
     <div style="margin-top: 30px; font-size: 0.85em; color: #888; text-align: center; line-height: 1.5;">
@@ -148,9 +161,9 @@
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
             <div>
                 <span id="map-ui-area"><select id="map-selector" onchange="changeMap()"></select></span>
-                <div id="map-info" style="font-size:11px; color:#aaa; margin-top:4px; line-height:1.4;"></div>
+                <div id="map-info" style="font-size:12px; color:#aaa; margin-top:4px; line-height:1.4;"></div>
             </div>
-            <span style="color:var(--gold)">金幣: <span id="p-gold">0</span> | <span id="kill-text">擊殺: <span id="kill-count">0</span>/10</span></span>
+            <span style="color:var(--gold); font-size:1.1em;">金幣: <span id="p-gold">0</span> | <span id="kill-text">擊殺: <span id="kill-count">0</span>/10</span></span>
         </div>
 
         <div class="battle-grid">
@@ -160,49 +173,52 @@
                     <span id="revive-seconds" style="color:white; font-size:1.8em; margin-top:5px;">5</span>
                     <div id="death-tip-box" class="death-tip"></div>
                 </div>
-                <strong style="color:var(--cherry)" id="p-display-name">-</strong>
-                <div class="bar-bg"><div id="p-hp-bar" class="hp-fill"></div><div class="bar-text" id="p-hp-text">0 / 0</div></div>
+                <strong style="color:var(--cherry); font-size:1.1em;" id="p-display-name">-</strong>
+                <div id="helper-info" style="font-size:12px; color:#fdcb6e; margin-top:3px; font-weight:bold;"></div>
+                
+                <div class="bar-bg" style="margin-top:8px;"><div id="p-hp-bar" class="hp-fill"></div><div class="bar-text" id="p-hp-text">0 / 0</div></div>
                 <div class="bar-bg"><div id="p-exp-bar" class="exp-fill"></div><div class="bar-text" id="p-exp-text">0 / 0</div></div>
             </div>
-            <div style="text-align:center; color:#444; font-weight:bold;">VS</div>
+            <div style="text-align:center; color:#444; font-weight:bold; font-size:1.2em;">VS</div>
             <div class="unit-box" id="m-box">
-                <strong id="m-name" style="color:#ff4757;">-</strong>
-                <div class="bar-bg">
+                <strong id="m-name" style="color:#ff4757; font-size:1.1em;">-</strong>
+                <div class="bar-bg" style="margin-top:20px;">
                     <div id="m-hp-bar" class="hp-fill"></div>
                     <div class="bar-text" id="m-hp-text">0 / 0</div>
                 </div>
-                <div style="font-size: 11px; color:#888;" id="m-sub-info">Lv. <span id="m-lvl">1</span></div>
+                <div style="font-size: 12px; color:#888; margin-top:5px;" id="m-sub-info">Lv. <span id="m-lvl">1</span></div>
             </div>
         </div>
 
         <div class="skill-bar" id="skill-slots-area">
-            <div class="skill-slot empty" id="slot-0" onclick="handleSlotClick(0)">空 <small style="font-size:0.7em">(點擊裝備)</small></div>
-            <div class="skill-slot empty" id="slot-1" onclick="handleSlotClick(1)">空 <small style="font-size:0.7em">(點擊裝備)</small></div>
-            <div class="skill-slot empty" id="slot-2" onclick="handleSlotClick(2)">空 <small style="font-size:0.7em">(點擊裝備)</small></div>
-            <div class="skill-slot empty" id="slot-3" onclick="handleSlotClick(3)">空 <small style="font-size:0.7em">(點擊裝備)</small></div>
+            <div class="skill-slot empty" id="slot-0" onclick="handleSlotClick(0)">空 <br><small>(點擊設定)</small></div>
+            <div class="skill-slot empty" id="slot-1" onclick="handleSlotClick(1)">空 <br><small>(點擊設定)</small></div>
+            <div class="skill-slot empty" id="slot-2" onclick="handleSlotClick(2)">空 <br><small>(點擊設定)</small></div>
+            <div class="skill-slot empty" id="slot-3" onclick="handleSlotClick(3)">空 <br><small>(點擊設定)</small></div>
         </div>
 
         <div class="prep-area">
             <div class="prep-controls">
-                <select id="potion-select" onchange="player.selectedPotion = this.value; updateUI();"></select>
-                <span style="color:var(--quest);">剩餘: <span id="potion-count" style="font-weight:bold;">0</span></span>
-                <button class="btn-action" style="padding:4px 10px; font-size:0.9em;" onclick="usePotion(true)">手動</button>
+                <select id="potion-select" onchange="player.selectedPotion = this.value; updateUI();" style="font-size:0.95em; padding:4px;"></select>
+                <span style="color:var(--quest); font-size:0.95em;">剩餘: <span id="potion-count" style="font-weight:bold;">0</span></span>
+                <button id="btn-manual-heal" class="btn-action" style="padding:6px 12px; font-size:0.95em; min-width:60px;" onclick="usePotion(true)">手動</button>
             </div>
             <div class="prep-controls">
-                <label style="color:#aaa; font-size:0.85em; cursor:pointer; display:flex; align-items:center; gap:3px;">
-                    <input type="checkbox" id="auto-heal-check" onchange="player.autoHealEnabled = this.checked;"> 自動補血
+                <label style="color:#aaa; font-size:0.9em; cursor:pointer; display:flex; align-items:center; gap:3px;">
+                    <input type="checkbox" id="auto-heal-check" onchange="player.autoHealEnabled = this.checked;" style="transform:scale(1.2);"> 自動補血
                 </label>
-                <span style="font-size:0.8em; color:#aaa;">&lt;</span>
-                <input type="number" id="auto-heal-input" value="0" min="0" max="99" style="width:40px;" onchange="updateAutoHeal(this.value)"> <span style="color:#aaa">%</span>
+                <span style="font-size:0.9em; color:#aaa; margin-left: 5px;">HP &lt;</span>
+                <input type="number" id="auto-heal-input" value="1" min="1" max="100" style="width:45px; font-size:0.9em;" onchange="updateAutoHeal(this.value)"> 
+                <span style="color:#aaa;">%</span>
             </div>
         </div>
 
         <div style="text-align:center; margin-bottom:10px; display:flex; justify-content:center; align-items:center; gap:15px;">
-            <button id="btn-boss" onclick="manualBoss()" disabled class="btn-action" style="background:#ff4757; color:white;">⚔️ 挑戰 BOSS</button>
-            <label style="color:var(--danger); font-size: 0.9em; cursor: pointer; display:flex; align-items:center; gap:3px;">
-                <input type="checkbox" id="auto-boss-check" onchange="player.autoBoss = this.checked; updateUI();"> 自動挑戰
+            <button id="btn-boss" onclick="manualBoss()" disabled class="btn-action" style="background:#ff4757; color:white; padding:8px 20px; font-size:1em;">⚔️ 挑戰 BOSS</button>
+            <label style="color:var(--danger); font-size: 0.95em; cursor: pointer; display:flex; align-items:center; gap:5px;">
+                <input type="checkbox" id="auto-boss-check" onchange="player.autoBoss = this.checked; updateUI();" style="transform:scale(1.2);"> 自動挑戰
             </label>
-            <span style="color:#aaa; font-size:0.9em; border-left:1px solid #444; padding-left:15px;">🛡️ 御守: <span id="revive-count" style="color:var(--gold);">0</span></span>
+            <span style="color:#aaa; font-size:0.95em; border-left:1px solid #444; padding-left:15px;">🛡️ 御守: <span id="revive-count" style="color:var(--gold);">0</span></span>
         </div>
 
         <div class="stat-alloc-grid">
@@ -223,19 +239,40 @@
             </div>
         </div>
         
-        <div id="detailed-stats" style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.85em; display: flex; justify-content: space-around; color: #aaa; border: 1px solid #333;">
-            <span title="物理傷害 (基礎+裝備)">🗡️ <span id="det-atk" style="color:white">0</span></span>
-            <span title="攻擊間隔">⚡ <span id="det-spd" style="color:white">0</span></span> <span title="物理減傷率 (基礎+裝備)">🛡️ <span id="det-def" style="color:white">0</span></span> <span title="閃避機率 (基礎+裝備)">🍃 <span id="det-eva" style="color:white">0</span></span> 
+        <div id="detailed-stats" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 0.95em; display: flex; justify-content: space-around; color: #aaa; border: 1px solid #333;">
+            <span title="物理傷害 (基礎+裝備+夥伴)">🗡️ <span id="det-atk" style="color:white">0</span></span>
+            <span title="攻擊間隔 (每點AGI增加頻率)">⚡ <span id="det-spd" style="color:white">0</span></span> 
+            <span title="減傷率 (體質+裝備)">🛡️ <span id="det-def" style="color:white">0</span></span> 
+            <span title="閃避機率 (AGI+裝備)">🍃 <span id="det-eva" style="color:white">0</span></span> 
         </div>
 
         <div style="text-align:center; margin-top:10px;">
-            <span style="font-size:0.9em; color:var(--gold);">剩餘點數：<span id="stat-points">0</span></span><br>
+            <span style="font-size:1em; color:var(--gold);">剩餘點數：<span id="stat-points" style="font-weight:bold; font-size:1.2em;">0</span></span><br>
             <div id="alloc-btns" class="hidden" style="margin-top:10px; display:flex; justify-content:center; gap:10px;">
-                <button class="btn-action" style="background:#444; color:white; padding:4px 12px;" onclick="cancelPreview()">取消預覽</button>
-                <button class="btn-action" style="background:var(--quest); color:black; padding:4px 12px;" onclick="confirmStats()">確定配點</button>
+                <button class="btn-action" style="background:#444; color:white; padding:6px 15px; font-size:0.95em;" onclick="cancelPreview()">取消預覽</button>
+                <button class="btn-action" style="background:var(--quest); color:black; padding:6px 15px; font-size:0.95em;" onclick="confirmStats()">確定配點</button>
             </div>
         </div>
-        <div id="log" style="height: 100px; margin-top:15px; overflow-y:auto; background:#000; padding:10px; border-radius:8px; font-size:12px; color:#888; border:1px solid #222;"></div>
+
+        <div class="log-inv-tabs">
+            <div id="tab-log-btn" class="li-tab active" onclick="switchLogTab('log')">📜 日誌</div>
+            <div id="tab-inv-btn" class="li-tab" onclick="switchLogTab('inv')">🎒 行囊</div>
+            <div id="tab-skill-btn" class="li-tab" onclick="switchLogTab('skill')">🌀 秘技</div>
+            <div id="tab-helper-btn" class="li-tab" onclick="switchLogTab('helper')">⛩️ 夥伴</div>
+        </div>
+        <div id="log" class="li-content-box"></div>
+        
+        <div id="inv-area" class="li-content-box hidden">
+            <div class="inv-filter">
+                <button class="f-btn active" id="fb-all" onclick="setInvFilter('all')">全部</button>
+                <button class="f-btn" id="fb-rec" onclick="setInvFilter('rec')">補給品</button>
+                <button class="f-btn" id="fb-mat" onclick="setInvFilter('mat')">素材</button>
+            </div>
+            <div id="inv-list"></div>
+        </div>
+        <div id="skill-area" class="li-content-box hidden" style="padding:10px;"></div>
+        <div id="helper-area" class="li-content-box hidden" style="padding:10px;"></div>
+
     </div>
 
     <div id="view-village" class="view-content hidden">
@@ -244,16 +281,16 @@
             <button id="btn-quick-battle" class="btn-action hidden" style="background:var(--accent);" onclick="switchView('battle')">⚔️ 返回戰鬥</button>
         </div>
         <div id="village-menu" style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-            <div class="slot-card" id="card-path" style="width:auto; margin:0;" onclick="showSubView('path')"></div>
             <div class="slot-card" style="width:auto; margin:0;" onclick="showSubView('inn')"><h3 style="color:var(--accent); margin:5px 0;">🛌 旅籠屋</h3><p style="margin:0; font-size:0.8em; color:#aaa;">休息恢復體力</p></div>
-            <div class="slot-card" style="width:auto; margin:0;" onclick="showSubView('shop')"><h3 style="color:var(--cherry); margin:5px 0;">🏮 萬屋</h3><p style="margin:0; font-size:0.8em; color:#aaa;">購買藥水補給</p></div>
+            <div class="slot-card" style="width:auto; margin:0;" onclick="showSubView('shop')"><h3 style="color:var(--cherry); margin:5px 0;">🏮 萬屋</h3><p style="margin:0; font-size:0.8em; color:#aaa;">補給與道具</p></div>
+            <div class="slot-card" style="width:auto; margin:0;" onclick="showSubView('izakaya')"><h3 style="color:#fdcb6e; margin:5px 0;">🍶 居酒屋</h3><p style="margin:0; font-size:0.8em; color:#aaa;">招募夥伴與打工</p></div>
             <div class="slot-card" style="width:auto; margin:0;" onclick="showSubView('smith')"><h3 style="color:var(--mat); margin:5px 0;">⚒️ 鍛冶屋</h3><p style="margin:0; font-size:0.8em; color:#aaa;">強化與變賣</p></div>
             <div class="slot-card" style="width:auto; margin:0;" onclick="showSubView('save')"><h3 style="color:var(--quest); margin:5px 0;">💾 紀錄點</h3><p style="margin:0; font-size:0.8em; color:#aaa;">存檔與引繼</p></div>
-            <div class="slot-card hidden" id="card-gm" style="width:auto; margin:0; border-color:var(--gm);" onclick="showSubView('gm')"><h3 style="color:var(--gm); margin:5px 0;">🛠️ 神明特權</h3><p style="margin:0; font-size:0.8em; color:#aaa;">控制台</p></div>
             <div class="slot-card" style="width:auto; margin:0; border-color:#555;" onclick="logoutGame()"><h3 style="color:#888; margin:5px 0;">🌀 登出</h3><p style="margin:0; font-size:0.8em; color:#aaa;">自動存檔並離開</p></div>
+            <div class="slot-card hidden" id="card-gm" style="width:auto; margin:0; grid-column: span 2; border-color:var(--gm);" onclick="showSubView('gm')"><h3 style="color:var(--gm); margin:5px 0;">🛠️ 神明特權</h3><p style="margin:0; font-size:0.8em; color:#aaa;">控制台</p></div>
         </div>
         <div id="sub-view" class="hidden">
-            <button id="btn-back-village" class="btn-action" onclick="backToVillage()" style="background:#444; color:white; margin-bottom:15px;">← 返回</button>
+            <button id="btn-back-village" class="btn-action" onclick="backToVillage()" style="background:#444; color:white; margin-bottom:15px; font-size:1em;">← 返回</button>
             <div id="sub-content"></div>
         </div>
     </div>
@@ -261,45 +298,92 @@
 
 <script>
 /* ==========================================================================
-   📦 中央數據庫 ITEM_DB (所有的文本、數值、分類統一管理)
+   📦 中央數據庫 ITEM_DB, MOB_DB, HELPER_DB
    ========================================================================== */
 const ITEM_DB = {
-    // --- 💊 恢復藥水 (Recovery) ---
-    'p1': { id: 'p1', cat: 'rec', name: '薄濁之水', tag: '恢復30%', cost: 20, rate: 0.3, desc: '最基礎的藥水，恢復30%生命。' },
-    'p2': { id: 'p2', cat: 'rec', name: '清流之露', tag: '恢復50%', cost: 100, rate: 0.5, desc: '清澈的山泉水，恢復50%生命。' },
-    'p3': { id: 'p3', cat: 'rec', name: '紫電神水', tag: '恢復70%', cost: 300, rate: 0.7, desc: '帶有電氣的藥水，恢復70%生命。' },
-    'p4': { id: 'p4', cat: 'rec', name: '天照御神露', tag: '恢復100%', cost: 1000, rate: 1.0, desc: '傳說中的神水，完全恢復生命。' },
+    'p1': { id: 'p1', cat: 'rec', name: '生鮮野味', tag: '+50HP', cost: 15, value: 50, rate: 0, sellable: true, sellPrice: 3, shopAvailable: false, shopTab: 'rec', desc: '野外獲得的生肉，口感欠佳。' },
+    'p2': { id: 'p2', cat: 'rec', name: '醃製獸肉', tag: '+250HP', cost: 60, value: 250, rate: 0, sellable: true, sellPrice: 20, shopAvailable: true, shopTab: 'rec', desc: '萬屋特製的乾肉，補給量較高。' },
+    'p3': { id: 'p3', cat: 'rec', name: '行軍丸子', tag: '恢復30%', cost: 300, value: 0, rate: 0.3, sellable: true, sellPrice: 100, shopAvailable: true, shopTab: 'rec', desc: '專業配方煉製的補給，效果顯著。' },
+    'p4': { id: 'p4', cat: 'rec', name: '天照御神露', tag: '全恢復', cost: 2000, value: 0, rate: 1.0, sellable: true, sellPrice: 500, shopAvailable: true, shopTab: 'rec', desc: '傳說中的神水，完全恢復。' },
+    
 
-    // --- ⚒️ 強化素材 (Material) ---
-    'm0': { id: 'm0', cat: 'mat', name: '妖化鐵砂', val: 2, desc: '受妖氣侵蝕的細砂。' },
-    'm1': { id: 'm1', cat: 'mat', name: '竹妖的韌皮', val: 5, desc: '竹妖身上最堅韌的部分。' },
-    'm2': { id: 'm2', cat: 'mat', name: '怨念的木片', val: 15, desc: '寄宿著森林亡魂的碎木。' },
-    'm3': { id: 'm3', cat: 'mat', name: '染血的破傘', val: 35, desc: '古道上遺落的殘破遺物。' },
-    'm4': { id: 'm4', cat: 'mat', name: '雷精的碎核', val: 80, desc: '強大雷電能量的結晶體。' },
+    'm0': { id: 'm0', cat: 'mat', name: '妖化鐵砂', sellable: true, sellPrice: 2, shopAvailable: false, shopTab: 'mat', desc: '受妖氣侵蝕的細砂。' },
+    'm1': { id: 'm1', cat: 'mat', name: '竹妖的韌皮', sellable: true, sellPrice: 5, shopAvailable: false, shopTab: 'mat', desc: '竹妖身上最堅韌的部分。' },
+    'm2': { id: 'm2', cat: 'mat', name: '怨念的木片', sellable: true, sellPrice: 15, shopAvailable: false, shopTab: 'mat', desc: '寄宿著森林亡魂的碎木。' },
+    'm3': { id: 'm3', cat: 'mat', name: '染血的破傘', sellable: true, sellPrice: 35, shopAvailable: false, shopTab: 'mat', desc: '古道上遺落的殘破遺物。' },
+    'm4': { id: 'm4', cat: 'mat', name: '雷精的碎核', sellable: true, sellPrice: 80, shopAvailable: false, shopTab: 'mat', desc: '強大雷電能量的結晶體。' },
 
-    // --- 🎒 特殊道具 (Other) ---
-    'revive': { id: 'revive', cat: 'oth', name: '不死御守', tag: '復活', cost: 5000, desc: '抵擋一次致命傷害。' },
-    'wash_stats': { id: 'wash_stats', cat: 'oth', name: '忘卻之水', tag: '重置配點', cost: 100, desc: '重置所有已分配的屬性。' },
-
-    // --- ⚔️ 強化道具 (預留 Buff Category) ---
-    'b1': { id: 'b1', cat: 'buff', name: '力之酒(預留)', tag: '增益', cost: 500, desc: '短時間提升攻擊力。' }
+    'revive': { id: 'revive', cat: 'oth', name: '不死御守', tag: '復活', cost: 5000, sellable: false, sellPrice: 0, shopAvailable: true, shopTab: 'oth', desc: '抵擋一次致命傷害。' },
+    'wash_stats': { id: 'wash_stats', cat: 'oth', name: '忘卻之水', tag: '重置', cost: 100, sellable: false, sellPrice: 0, shopAvailable: true, shopTab: 'oth', desc: '重置所有已分配的屬性。' },
+    'b1': { id: 'b1', cat: 'buff', name: '力之酒(預留)', tag: '增益', cost: 500, sellable: true, sellPrice: 100, shopAvailable: false, shopTab: 'buff', desc: '短時間提升攻擊力。' }
 };
 
-// 🎯 叫號機函數：快速取得物品屬性
-function getItem(id) { return ITEM_DB[id] || { name: "不明物體", cost: 0, val: 0, rate: 0 }; }
+function getItem(id) { return ITEM_DB[id] || { name: "不明物體", cost: 0, val: 0, rate: 0, value: 0, sellable: false, sellPrice: 0 }; }
 
-/* ==========================================================================
-   ⛩️ 《永夜之境：宗師歸來》 核心設定 V0.2.3 (測試版)
-   ========================================================================== */
+// ⛩️ 夥伴資料庫 (已修復語法錯誤，並整合了主被動技能與打工加成)
+const HELPER_DB = {
+    'h1': { 
+        id: 'h1', name: '流浪浪人・伍丸', cost: 300, duration: 20,
+        skillType: 'attack', skillVal: 15, skillCd: 6,
+        passive: (p) => { return { atk: 3, def: 0, eva: 0 }; }, 
+        workBonus: { rate: 1.2, label: "護衛：工錢提升 20%" },
+        desc: '追求劍道的浪人。增加基礎攻擊 3 點，每 6 秒施放一次斬擊（15點真實傷害）。' 
+    },
+    'h2': { 
+        id: 'h2', name: '見習巫女・小葵', cost: 300, duration: 20,
+        skillType: 'heal', skillVal: 40, skillCd: 8,
+        passive: (p) => { return { atk: 0, def: 2, eva: 0 }; }, 
+        workBonus: { rate: 1.15, label: "人氣：小費提升 15%" },
+        desc: '里中神社的修行者。增加減傷 2%，每 8 秒恢復 40 點生命值。' 
+    },
+    'h3': { 
+        id: 'h3', name: '陰陽生・安倍才藏', cost: 300, duration: 20,
+        skillType: 'seal', skillVal: 1.5, skillCd: 10,
+        passive: (p) => { return { atk: 0, def: 0, eva: 2 }; }, 
+        workBonus: { rate: 1.0, label: "無打工加成" },
+        desc: '陰陽寮的學員。增加閃避率 2%，每 10 秒施放定身符，封印敵人攻擊 1.5 秒。' 
+    }
+};
 
-function el(id) { return document.getElementById(id); }
+// 👹 怪物資料庫 V0.4.0 (包含雙層防禦定值、閃避)
+const MOB_DB = {
+    // [修行] 幽靜道場
+    'm_dummy': { name: '朽木樁', hp: 1, atk: 0, defVal: 0, dr: 0, eva: 0, exp: 0, gold: 0, drops: [] },
+
+    // [補給] 靜謐荒野
+    'm_rabbit': { name: '野生長耳兔', hp: 35, atk: 2, defVal: 0, dr: 0.02, eva: 5, exp: 3, gold: 2, drops: [{id:'p1', chance:0.25}, {id:'m0', chance:0.05}] },
+    'm_fox_cub': { name: '落單幼狐', hp: 40, atk: 3, defVal: 0, dr: 0.02, eva: 8, exp: 4, gold: 3, drops: [{id:'p1', chance:0.30}, {id:'m0', chance:0.05}] },
+    'b_wolf': { name: '飢餓的野狼', hp: 250, atk: 14, defVal: 5, dr: 0.10, eva: 10, isBoss: true, drops: [{id:'p2', chance:0.50}, {id:'m0', chance:0.50}] },
+    'r_gold_rabbit': { name: '✨ 貪婪金兔', hp: 120, atk: 5, defVal: 2, dr: 0.05, eva: 30, isBoss: false, drops: [{id:'p2', chance:1.0}, {id:'m0', chance:1.0}] },
+
+    // 遺忘的竹林
+    'm_dog': { name: '迷途犬', hp: 60, atk: 5, defVal: 3, dr: 0.05, eva: 10, exp: 6, gold: 5, drops: [{id:'p1', chance:0.10}, {id:'m1', chance:0.15}] },
+    'm_bamboo': { name: '竹林小鬼', hp: 75, atk: 7, defVal: 5, dr: 0.08, eva: 5, exp: 7, gold: 6, drops: [{id:'m1', chance:0.15}, {id:'m0', chance:0.10}] },
+    'b_lion': { name: '荒廢石獅子', hp: 500, atk: 22, defVal: 15, dr: 0.15, eva: 5, isBoss: true, drops: [{id:'p2', chance:0.80}, {id:'m1', chance:1.0}] },
+
+    // 靜謐之森
+    'm_tengu': { name: '天狗', hp: 150, atk: 10, defVal: 10, dr: 0.10, eva: 20, exp: 15, gold: 15, drops: [{id:'p2', chance:0.10}, {id:'m2', chance:0.15}] },
+    'm_yama': { name: '山童', hp: 180, atk: 13, defVal: 18, dr: 0.12, eva: 5, exp: 18, gold: 18, drops: [{id:'m2', chance:0.15}, {id:'m0', chance:0.10}] },
+    'b_spirit': { name: '怨念木靈', hp: 1200, atk: 30, defVal: 25, dr: 0.20, eva: 15, isBoss: true, drops: [{id:'p3', chance:0.50}, {id:'m2', chance:1.0}] },
+
+    // 伏見古道
+    'm_fox': { name: '白狐', hp: 350, atk: 18, defVal: 20, dr: 0.15, eva: 25, exp: 40, gold: 35, drops: [{id:'p2', chance:0.15}, {id:'m3', chance:0.15}] },
+    'm_umbrella': { name: '紙傘怪', hp: 380, atk: 22, defVal: 25, dr: 0.18, eva: 15, exp: 45, gold: 40, drops: [{id:'m3', chance:0.15}, {id:'m0', chance:0.10}] },
+    'b_inari': { name: '邪染稻荷使', hp: 3000, atk: 45, defVal: 40, dr: 0.25, eva: 20, isBoss: true, drops: [{id:'p4', chance:0.10}, {id:'m3', chance:1.0}] },
+
+    // 鳴神大社殘跡
+    'm_thunder': { name: '雷精', hp: 900, atk: 30, defVal: 35, dr: 0.20, eva: 20, exp: 100, gold: 70, drops: [{id:'p3', chance:0.10}, {id:'m4', chance:0.15}] },
+    'm_bird': { name: '雷震子', hp: 1000, atk: 35, defVal: 40, dr: 0.22, eva: 25, exp: 110, gold: 80, drops: [{id:'m4', chance:0.15}, {id:'m0', chance:0.10}] },
+    'b_tengu': { name: '蒼雷大天狗', hp: 8000, atk: 70, defVal: 60, dr: 0.30, eva: 30, isBoss: true, drops: [{id:'p4', chance:0.50}, {id:'m4', chance:1.0}] }
+};
 
 const maps = [
-    { name: "[修行] 幽靜道場", mobs: ["朽木樁"], boss: null, baseExp: 0, baseGold: 0, baseHp: 0, bossHp: 0, baseAtk: 0, bossAtk: 0, dropRate: 0, matId: 'm0', minLvl: 1, maxLvl: 999, def: 0, eva: 0 },
-    { name: "遺忘的竹林", mobs: ["迷途犬", "竹林小鬼"], boss: "荒廢石獅子", baseExp: 6, baseGold: 5, baseHp: 50, bossHp: 400, baseAtk: 3, bossAtk: 15, dropRate: 0.10, matId: 'm1', minLvl: 1, maxLvl: 9, def: 0, eva: 0 },
-    { name: "靜謐之森", mobs: ["天狗", "山童"], boss: "怨念木靈", baseExp: 15, baseGold: 15, baseHp: 120, bossHp: 1000, baseAtk: 6, bossAtk: 20, dropRate: 0.10, matId: 'm2', minLvl: 10, maxLvl: 19, def: 0.05, eva: 0 },
-    { name: "伏見古道", mobs: ["白狐", "紙傘怪"], boss: "邪染稻荷使", baseExp: 40, baseGold: 35, baseHp: 300, bossHp: 2500, baseAtk: 12, bossAtk: 35, dropRate: 0.10, matId: 'm3', minLvl: 20, maxLvl: 29, def: 0.10, eva: 0.05 },
-    { name: "鳴神大社殘跡", mobs: ["雷精", "雷震子"], boss: "蒼雷大天狗", baseExp: 100, baseGold: 70, baseHp: 800, bossHp: 6000, baseAtk: 20, bossAtk: 50, dropRate: 0.10, matId: 'm4', minLvl: 30, maxLvl: 999, def: 0.15, eva: 0.10 }
+    { name: "[修行] 幽靜道場", minLvl: 1, maxLvl: 999, mobs: ["m_dummy"], rareMob: null, boss: null },
+    { name: "[補給] 靜謐荒野", minLvl: 1, maxLvl: 5, mobs: ["m_rabbit", "m_fox_cub"], boss: "b_wolf", rareMob: {id: "r_gold_rabbit", chance: 0.05} },
+    { name: "遺忘的竹林", minLvl: 1, maxLvl: 9, mobs: ["m_dog", "m_bamboo"], boss: "b_lion", rareMob: null },
+    { name: "靜謐之森", minLvl: 10, maxLvl: 19, mobs: ["m_tengu", "m_yama"], boss: "b_spirit", rareMob: null },
+    { name: "伏見古道", minLvl: 20, maxLvl: 29, mobs: ["m_fox", "m_umbrella"], boss: "b_inari", rareMob: null },
+    { name: "鳴神大社殘跡", minLvl: 30, maxLvl: 999, mobs: ["m_thunder", "m_bird"], boss: "b_tengu", rareMob: null }
 ];
 
 const skillDB = {
@@ -307,42 +391,32 @@ const skillDB = {
     'agi_combo2': { id: 'agi_combo2', name: '殘影', type: 'passive', desc: '攻擊時10%機率觸發二連擊', color: '#70a1ff' },
     'vit_strike': { id: 'vit_strike', name: '剛力震擊', type: 'active', desc: '造成(攻擊+體質x2)的傷害', cd: 8, color: '#e1b12c' },
     'vit_thorns': { id: 'vit_thorns', name: '震怒', type: 'passive', desc: '受傷時20%機率反彈所有傷害', color: '#e1b12c' },
-    'str_cleave': { id: 'str_cleave', name: '破甲重劈', type: 'active', desc: '造成2.5倍傷害，且無視防禦', cd: 10, color: '#ff4757' }
+    'str_cleave': { id: 'str_cleave', name: '破甲重劈', type: 'active', desc: '造成2.5倍傷害，且破防15%', cd: 10, color: '#ff4757' }
 };
 
-const gambitOptions = [
-    { val: 0, text: "無條件 (CD好就放)" },
-    { val: 1, text: "我方 HP < 50%" },
-    { val: 2, text: "敵方 HP > 50%" },
-    { val: 3, text: "僅對首領施放" }
-];
-
 let currentSlotKey = "";
-
 const defaultPlayer = {
     name: "", lvl: 1, exp: 0, next: 30, gold: 0, 
     str: 2, vit: 1, agi: 0, statPoints: 5, lockedStats: { str: 2, vit: 1, agi: 0 },
     hp: 100, mhp: 100, mapIdx: 1, maxMapIdx: 1, kills: 0, 
-    autoBoss: false, revives: 0, lastSaveTime: Date.now(),
+    autoBoss: false, revives: 0, lastSaveTime: Date.now(), workStartTime: null,
     potions: { p1: 5, p2: 0, p3: 0, p4: 0 }, mats: { m0: 0, m1: 0, m2: 0, m3: 0, m4: 0 }, gear: { arms: 0, body: 0, legs: 0 }, 
     selectedPotion: 'p1', autoHeal: 0, autoHealEnabled: false,
-    unlockedSkills: [], 
-    equippedSkills: [null, null, null, null],
-    skillGambits: [0, 0, 0, 0], 
-    skillGambitValues: [50, 50, 50, 50], 
-    skillGambitOps: ['<', '<', '<', '<']
+    unlockedSkills: [], equippedSkills: [null, null, null, null],
+    skillGambits: [0, 0, 0, 0], skillGambitValues: [50, 50, 50, 50], skillGambitOps: ['<', '<', '<', '<'],
+    helper: null 
 };
 
 let player = JSON.parse(JSON.stringify(defaultPlayer));
-let monster = { name: "", hp: 0, mhp: 0, atk: 0, lvl: 1, isBoss: false };
+let monster = { id: "", name: "", hp: 0, mhp: 0, atk: 0, lvl: 1, isBoss: false, defVal: 0, dr: 0, eva: 0 };
 let isPaused = true; let isReviving = false; let isResting = false;
 let currentView = 'battle'; let battleTimer = null; 
 let statPreview = { str: 0, vit: 0, agi: 0 };
-
-let combatState = { mobAtkTimer: 2.0, skillCds: [0, 0, 0, 0], zenTimer: 0, zenDmgAccum: 0 };
-
-const initBaseStats = { str: 2, vit: 1, agi: 0 };
+let currentLogTab = 'log'; let currentInvFilter = 'all';
+let combatState = { mobAtkTimer: 2.0, skillCds: [0, 0, 0, 0], zenTimer: 0, zenDmgAccum: 0, potionCd: 0, helperSkillCd: 0 };
 let initAllocatedStats = { str: 2, vit: 1, agi: 0 };
+
+function el(id) { return document.getElementById(id); }
 
 function initSlotScreen() {
     const container = el('slots-container'); container.innerHTML = "";
@@ -354,14 +428,9 @@ function initSlotScreen() {
             try { 
                 let d = JSON.parse(s); 
                 card.innerHTML = `<button class="btn-del-slot" onclick="confirmDeleteSlot(event, '${key}')">刪除</button>
-                    <div class="card-content">
-                        <h3 style="color:var(--cherry); margin-bottom:5px;">${d.name || "無名者"}</h3>
-                        <p style="margin:0;">Lv.${d.lvl || 1}</p>
-                    </div>`; 
+                    <div class="card-content"><h3 style="color:var(--cherry); margin-bottom:5px;">${d.name || "無名者"}</h3><p style="margin:0;">Lv.${d.lvl || 1}</p></div>`; 
             } catch(e) {}
-        } else {
-            card.innerHTML = `<div class="card-content"><h3>空白世界線 ${i}</h3><p style="color:#666">點擊開啟新旅程</p></div>`;
-        }
+        } else { card.innerHTML = `<div class="card-content"><h3>空白世界線 ${i}</h3><p style="color:#666">點擊開啟新旅程</p></div>`; }
         card.addEventListener('click', (e) => {
             if (e.target.classList.contains('btn-del-slot')) return;
             currentSlotKey = key; startGame();
@@ -370,31 +439,13 @@ function initSlotScreen() {
     }
 }
 
-function confirmDeleteSlot(e, key) {
-    e.stopPropagation(); 
-    openModal("⚠️ 刪除確認", "確定要刪除這條世界線嗎？資料將永遠消失。", "確認刪除", () => {
-        localStorage.removeItem(key); initSlotScreen();
-    }, true);
-}
-
+function confirmDeleteSlot(e, key) { e.stopPropagation(); openModal("⚠️ 刪除確認", "確定要刪除這條世界線嗎？資料將永遠消失。", "確認刪除", () => { localStorage.removeItem(key); initSlotScreen(); }, true); }
 function startGame() { el('slot-screen').classList.add('hidden'); el('main-game').classList.remove('hidden'); loadGame(); }
-
-function allocInitStat(t, val) {
-    if (player.statPoints > 0) { player.statPoints--; initAllocatedStats[t]++; }
-    el(`init-${t}`).innerText = initAllocatedStats[t];
-    el('init-points').innerText = player.statPoints;
-}
-
-function resetInitStats() {
-    player.statPoints = 5; initAllocatedStats = { str: 2, vit: 1, agi: 0 };
-    ['str','vit','agi'].forEach(s => el(`init-${s}`).innerText = initAllocatedStats[s]);
-    el('init-points').innerText = 5;
-    el('init-error').style.display = 'none';
-}
+function allocInitStat(t, val) { if (player.statPoints > 0) { player.statPoints--; initAllocatedStats[t]++; } el(`init-${t}`).innerText = initAllocatedStats[t]; el('init-points').innerText = player.statPoints; }
+function resetInitStats() { player.statPoints = 5; initAllocatedStats = { str: 2, vit: 1, agi: 0 }; ['str','vit','agi'].forEach(s => el(`init-${s}`).innerText = initAllocatedStats[s]); el('init-points').innerText = 5; el('init-error').style.display = 'none'; }
 
 function loadGame() { 
-    let s = localStorage.getItem(currentSlotKey); 
-    player = JSON.parse(JSON.stringify(defaultPlayer));
+    let s = localStorage.getItem(currentSlotKey); player = JSON.parse(JSON.stringify(defaultPlayer));
     if(s) {
         try {
             let sd = JSON.parse(s); 
@@ -406,123 +457,115 @@ function loadGame() {
             player.skillGambits = sd.skillGambits || [0, 0, 0, 0];
             player.skillGambitValues = sd.skillGambitValues || [50, 50, 50, 50];
             player.skillGambitOps = sd.skillGambitOps || ['<', '<', '<', '<'];
-            Object.assign(player, sd);
-            
-            player.lockedStats = { str: 2, vit: 1, agi: 0 }; 
-
-            if(player.maxMapIdx < 1) player.maxMapIdx = 1; 
-            if(player.mapIdx >= maps.length) player.mapIdx = maps.length - 1;
-            if(player.maxMapIdx >= maps.length) player.maxMapIdx = maps.length - 1;
+            Object.assign(player, sd); player.lockedStats = { str: 2, vit: 1, agi: 0 }; 
+            if(player.maxMapIdx < 1) player.maxMapIdx = 1; if(player.mapIdx >= maps.length) player.mapIdx = maps.length - 1; if(player.maxMapIdx >= maps.length) player.maxMapIdx = maps.length - 1;
+            if(player.workStartTime === undefined) player.workStartTime = null; 
         } catch(e) { console.error("Save Parse Error"); }
     }
     initPotionSelect();
-    
     if(!player.name || player.name === "") { 
-        el('naming-area').classList.remove('hidden'); 
-        resetInitStats();
+        el('naming-area').classList.remove('hidden'); resetInitStats();
         openModal("踏入輪迴", "名號一旦定下，便與靈魂綁定。請確認好您的修行天賦：", "開啟旅程", () => { 
-            let n = el('player-name-input').value.trim();
-            if(n === "") n = "無名者"; 
-            if(player.statPoints > 0) { 
-                el('init-error').style.display = 'block'; 
-                return false; 
-            }
+            let n = el('player-name-input').value.trim(); if(n === "") n = "無名者"; 
+            if(player.statPoints > 0) { el('init-error').style.display = 'block'; return false; }
             player.name = n; player.str = initAllocatedStats.str; player.vit = initAllocatedStats.vit; player.agi = initAllocatedStats.agi;
-            player.lockedStats = { str: 2, vit: 1, agi: 0 };
-            el('naming-area').classList.add('hidden'); 
-            checkSkillUnlocks();
-            postLoadInit();
+            player.lockedStats = { str: 2, vit: 1, agi: 0 }; el('naming-area').classList.add('hidden'); checkSkillUnlocks(); postLoadInit();
         }); 
-    } else { 
-        checkSkillUnlocks();
-        postLoadInit(); 
-    } 
+    } else { checkSkillUnlocks(); postLoadInit(); } 
 }
 
 function postLoadInit() { 
     updateMapSelector(); spawn(false); updateUI(); isPaused = false; 
-    log("💡 【V0.2.3 測試版】：BUG修復，商店新增忘卻藥水(重新配點)！其餘功能持續更新中", "var(--accent)");
-    if(player.lvl === 1 && player.exp === 0 && player.gold === 0 && player.potions.p1 === 5) {
-        log("🎁 新手物資已發放：薄濁之水 x5", "var(--quest)");
-    }
+    log("💡 【V0.4.0】：神啟與血契核心升級，雙層防禦系統上線！", "var(--accent)");
+    if(player.lvl === 1 && player.exp === 0 && player.gold === 0 && player.potions.p1 === 5) log("🎁 新手物資已發放：生鮮野味 x5", "var(--quest)");
     if(player.name === "御雷神命") { let gmCard = el('card-gm'); if(gmCard) gmCard.classList.remove('hidden'); }
-    if(currentView === 'battle') startBattleLoop(); 
+    if(currentView === 'battle' && !player.workStartTime) startBattleLoop(); 
+    if(player.workStartTime) { isPaused = true; switchView('village'); showSubView('work'); }
 }
 
 function saveGame(manual) { 
-    if (statPreview.str > 0 || statPreview.vit > 0 || statPreview.agi > 0) {
-        if(manual) log("⚠️ 請先確定或取消配點後再進行存檔。", "var(--danger)");
-        return; 
-    }
-    player.lastSaveTime = Date.now(); 
-    localStorage.setItem(currentSlotKey, JSON.stringify(player)); 
+    if (statPreview.str > 0 || statPreview.vit > 0 || statPreview.agi > 0) { if(manual) log("⚠️ 請先確定或取消配點後再進行存檔。", "var(--danger)"); return; }
+    player.lastSaveTime = Date.now(); localStorage.setItem(currentSlotKey, JSON.stringify(player)); 
     if(manual) log("✔ 靈魂記憶已封存於石碑之中。", "var(--quest)"); 
+}
+
+
+function generateImportCode() {
+    saveGame(false);
+    let str = JSON.stringify(player);
+    let code = btoa(encodeURIComponent(str));
+    
+    if(navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(code).then(() => {
+            openModal("📤 靈魂引繼", `引繼碼已<b>自動複製</b>到您的剪貼簿！<br><small style="color:var(--quest);">您可以直接去別處貼上了。</small><br><textarea readonly style="width:90%;height:80px;font-size:10px;background:#000;color:var(--gold);margin-top:10px;padding:8px;border:1px solid var(--cherry);border-radius:5px;" onclick="this.select()">${code}</textarea>`, "了解");
+        }).catch(err => {
+            openModal("📤 靈魂引繼", `請手動複製下方的引繼碼：<br><textarea readonly style="width:90%;height:100px;font-size:10px;background:#000;color:var(--gold);margin-top:10px;padding:8px;border:1px solid var(--cherry);border-radius:5px;" onclick="this.select()">${code}</textarea>`, "了解");
+        });
+    } else {
+        openModal("📤 靈魂引繼", `請手動複製下方的引繼碼：<br><textarea readonly style="width:90%;height:100px;font-size:10px;background:#000;color:var(--gold);margin-top:10px;padding:8px;border:1px solid var(--cherry);border-radius:5px;" onclick="this.select()">${code}</textarea>`, "了解");
+    }
+}
+
+function promptImportCode() {
+    let code = prompt("請貼上您的引繼碼：");
+    if(!code) return;
+    try {
+        let decoded = decodeURIComponent(atob(code));
+        let d = JSON.parse(decoded);
+        
+        if(d && d.name !== undefined) {
+            let info = `確定要繼承此靈魂紀錄嗎？<br><br><div style="background:#111; padding:15px; border-radius:8px; border:1px solid var(--gold); text-align:left;">
+                <span style="color:var(--cherry);">角色姓名：</span><b>${d.name || "無名者"}</b><br>
+                <span style="color:var(--cherry);">目前境界：</span><b>Lv.${d.lvl}</b><br>
+                <span style="color:var(--cherry);">持有金幣：</span><b>$${(d.gold||0).toLocaleString()}</b>
+            </div><br><span style="color:var(--danger);">⚠️ 此操作將覆蓋目前世界線的進度！</span>`;
+            
+            openModal("📥 確認繼承", info, "確認覆蓋", () => {
+                localStorage.setItem(currentSlotKey, JSON.stringify(d));
+                alert("靈魂繼承完成，即將重啟世界。");
+                location.reload();
+            }, true);
+        } else {
+            alert("❌ 此引繼碼不含有效的靈魂資訊！");
+        }
+    } catch(e) { 
+        alert("❌ 引繼碼解析失敗，請確認格式是否正確！"); 
+    }
 }
 
 function logoutGame() { saveGame(false); location.reload(); }
 
-function generateImportCode() {
-    saveGame(false); let code = btoa(unescape(encodeURIComponent(JSON.stringify(player))));
-    if(navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(code).then(() => openModal("📤 生成成功", `引繼碼已<b style="color:var(--quest)">自動複製</b>！<br><textarea readonly onclick="this.select()">${code}</textarea>`, "太棒了")).catch(err => openModal("📤 您的引繼碼", `請複製下方代碼：<br><textarea readonly onclick="this.select()">${code}</textarea>`, "知道了"));
-    } else openModal("📤 您的引繼碼", `請複製下方代碼：<br><textarea readonly onclick="this.select()">${code}</textarea>`, "知道了");
-}
-
-function promptImportCode() {
-    let code = prompt("請貼上您的引繼碼：\n(讀取後將直接覆蓋您【當前】的世界線紀錄！)");
-    if(code) {
-        try {
-            let d = JSON.parse(decodeURIComponent(escape(atob(code))));
-            if(d.name) openModal("📥 讀取準備", `即將覆蓋為：<br><br><b style="color:var(--cherry); font-size:1.2em;">${d.name}</b> (Lv.${d.lvl})`, "確認覆蓋", () => { localStorage.setItem(currentSlotKey, JSON.stringify(d)); location.reload(); }, true);
-        } catch(e) { openModal("❌ 錯誤", "無效的引繼碼。", "知道了"); }
-    }
-}
-
 function checkSkillUnlocks() {
     let newlyUnlocked = false;
-    let addSkill = (id) => {
-        if(!player.unlockedSkills.includes(id)) {
-            player.unlockedSkills.push(id);
-            log(`✨ 突破界限！領悟新秘技：【${skillDB[id].name}】`, "var(--quest)");
-            newlyUnlocked = true;
-        }
-    };
-    if(player.agi >= 5) addSkill('agi_combo1');
-    if(player.agi >= 10) addSkill('agi_combo2');
-    if(player.vit >= 5) addSkill('vit_strike');
-    if(player.vit >= 15) addSkill('vit_thorns');
+    let addSkill = (id) => { if(!player.unlockedSkills.includes(id)) { player.unlockedSkills.push(id); log(`✨ 突破界限！領悟新秘技：【${skillDB[id].name}】`, "var(--quest)"); newlyUnlocked = true; } };
+    if(player.agi >= 5) addSkill('agi_combo1'); if(player.agi >= 10) addSkill('agi_combo2');
+    if(player.vit >= 5) addSkill('vit_strike'); if(player.vit >= 15) addSkill('vit_thorns');
     if(player.str >= 15) addSkill('str_cleave');
     if(newlyUnlocked && !isPaused) updateUI();
 }
 
 function initPotionSelect() {
     const sel = el('potion-select'); if(!sel) return; sel.innerHTML = "";
-    if(!player.potions) player.potions = { p1: 5, p2: 0, p3: 0, p4: 0 };
-    
-    // 🎯 這裡改用 ITEM_DB 讀取藥水清單
-    Object.values(ITEM_DB).filter(i => i.cat === 'rec').forEach(item => {
-        let label = item.tag ? `(${item.tag})` : "";
-        sel.innerHTML += `<option value="${item.id}">${item.name} ${label}</option>`;
-    });
-
-    sel.value = player.selectedPotion;
-    if(el('auto-heal-input')) el('auto-heal-input').value = Math.floor(player.autoHeal * 100);
-    if(el('auto-heal-check')) el('auto-heal-check').checked = player.autoHealEnabled;
+    Object.values(ITEM_DB).filter(i => i.cat === 'rec').forEach(item => { let label = item.tag ? `(${item.tag})` : ""; sel.innerHTML += `<option value="${item.id}">${item.name} ${label}</option>`; });
+    sel.value = player.selectedPotion; if(el('auto-heal-input')) el('auto-heal-input').value = Math.floor(player.autoHeal * 100) || 1; if(el('auto-heal-check')) el('auto-heal-check').checked = player.autoHealEnabled;
 }
 
-function updateAutoHeal(val) { let num = parseInt(val); if(isNaN(num) || num < 0) num = 0; if(num > 99) num = 99; if(el('auto-heal-input')) el('auto-heal-input').value = num; player.autoHeal = num / 100; }
+function updateAutoHeal(val) { 
+    let num = parseInt(val); if(isNaN(num)) num = 1; 
+    if(num < 1) num = 1; if(num > 100) num = 100; 
+    if(el('auto-heal-input')) el('auto-heal-input').value = num; player.autoHeal = num / 100; 
+}
 
 function usePotion(isManual = false) {
-    let pid = player.selectedPotion;
-    let pItem = getItem(pid); // 🎯 使用查表
+    if (combatState.potionCd > 0) { if (isManual) log(`🍵 藥效吸收中... (${Math.ceil(combatState.potionCd)}s)`, "var(--danger)"); return false; }
+    let pid = player.selectedPotion; let pItem = getItem(pid); 
     if(player.potions[pid] > 0) {
         if(player.hp >= getMaxHP() && isManual) return log("生命值已滿！");
-        player.potions[pid]--; 
-        let heal = Math.floor(getMaxHP() * pItem.rate);
-        player.hp = Math.min(getMaxHP(), player.hp + heal); showDmg('p-box', `+${heal}`, 'lime');
+        player.potions[pid]--; let heal = pItem.value > 0 ? pItem.value : Math.floor(getMaxHP() * pItem.rate); player.hp = Math.min(getMaxHP(), player.hp + heal); 
+        combatState.potionCd = 5.0; showDmg('p-box', `+${heal}`, 'lime');
         if(player.potions[pid] === 0) { log(`【系統】${pItem.name} 耗盡！`, "var(--danger)"); if(isManual) autoHealLogic(true); }
         updateUI(); return true;
-    } else { if(isManual) openModal("補給耗盡", "藥水不足！請前往萬屋購買。", "知道了"); return false; }
+    } else { if(isManual) openModal("補給耗盡", "補給品不足！請前往荒野打獵或商店購買。", "知道了"); return false; }
 }
 
 function autoHealLogic(onlySearch = false) {
@@ -530,478 +573,583 @@ function autoHealLogic(onlySearch = false) {
     else {
         let order = ['p1', 'p2', 'p3', 'p4']; let found = false;
         for(let key of order) {
-            if(player.potions[key] > 0) {
-                player.selectedPotion = key; initPotionSelect(); 
-                if(!onlySearch) { log(`【系統】自動切換為 ${getItem(key).name}。`, "var(--accent)"); usePotion(false); }
-                found = true; break; 
-            }
+            if(player.potions[key] > 0) { player.selectedPotion = key; initPotionSelect(); if(!onlySearch) { log(`【系統】自動切換為 ${getItem(key).name}。`, "var(--accent)"); usePotion(false); } found = true; break; }
         }
-        if(!found && !onlySearch) log(`【警告】所有藥水均已耗盡！`, "var(--danger)");
+        if(!found && !onlySearch) log(`【警告】所有補給均已耗盡！`, "var(--danger)");
     }
 }
 
-function getAtkVal() { return Math.floor(player.str * 1.5) + ((player.gear.arms || 0) * 3); }
-function getDefPercent(vit) { let base = vit <= 100 ? vit * 0.5 : vit <= 300 ? 50 + (vit - 100) * 0.1 : 70 + (vit - 300) * 0.05; return Math.min(90, base + ((player.gear.body || 0) * 1.5)); }
-function getEvaPercent(agi) { let base = agi <= 100 ? agi * 0.5 : agi <= 300 ? 50 + (agi - 100) * 0.1 : 70 + (agi - 300) * 0.05; return Math.min(60, base + ((player.gear.legs || 0) * 1.0)); }
+// 🎯 V0.4.0 屬性獲取公式
+function getAtkVal() { 
+    let base = Math.floor(player.str * 1.5) + ((player.gear.arms || 0) * 3); 
+    if (player.helper && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].passive) {
+        base += HELPER_DB[player.helper.id].passive(player).atk || 0;
+    }
+    return base;
+}
+function getDefPercent(vit) { 
+    let base = vit <= 100 ? vit * 0.5 : vit <= 300 ? 50 + (vit - 100) * 0.1 : 70 + (vit - 300) * 0.05; 
+    // 保留您原本設定的胴甲 * 1.5
+    let total = base + ((player.gear.body || 0) * 1.5);
+    if (player.helper && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].passive) {
+        total += HELPER_DB[player.helper.id].passive(player).def || 0;
+    }
+    return Math.min(90, total); 
+}
+function getEvaPercent(agi) { 
+    let base = agi <= 50 ? agi * 0.6 : 30 + (agi - 50) * 0.2; 
+    // 保留您原本設定的足具 * 1.0
+    let total = base + ((player.gear.legs || 0) * 1.0);
+    if (player.helper && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].passive) {
+        total += HELPER_DB[player.helper.id].passive(player).eva || 0;
+    }
+    return Math.min(70, total);
+}
 
 function executeSkill(slotIdx) {
     let sid = player.equippedSkills[slotIdx];
     if(!sid || !skillDB[sid] || skillDB[sid].type !== 'active' || combatState.skillCds[slotIdx] > 0 || player.hp <= 0) return false;
     if(player.mapIdx !== 0 && monster.hp <= 0) return false; 
+    let sk = skillDB[sid]; combatState.skillCds[slotIdx] = sk.cd; let baseDmg = getAtkVal(); let isDummy = player.mapIdx === 0;
     
-    let sk = skillDB[sid];
-    combatState.skillCds[slotIdx] = sk.cd;
-    let baseDmg = getAtkVal();
-    let isDummy = player.mapIdx === 0;
-    
+    // 技能傷害套用雙層防禦 (如果打在實體怪身上)
+    let finalDmg = 0;
     if(sid === 'vit_strike') { 
         let d = baseDmg + (player.vit * 2); 
-        if(isDummy) { combatState.zenDmgAccum += d; showDmg('m-box', d, sk.color); }
-        else { monster.hp -= d; showDmg('m-box', d, sk.color); }
-        showDmg('p-box', "【震擊】", sk.color); 
+        if(isDummy) { finalDmg = d; } else {
+            let mDefVal = monster.defVal || 0; let mDr = monster.dr || 0;
+            finalDmg = Math.max(1, (d - mDefVal)) * (1 - mDr);
+        }
+        finalDmg = Math.floor(finalDmg);
+        if(isDummy) combatState.zenDmgAccum += finalDmg; else monster.hp -= finalDmg; 
+        showDmg('m-box', finalDmg, sk.color); showDmg('p-box', "【震擊】", sk.color); 
     }
     else if(sid === 'str_cleave') { 
         let d = Math.floor(baseDmg * 2.5); 
-        if(isDummy) { combatState.zenDmgAccum += d; showDmg('m-box', d, sk.color); }
-        else { monster.hp -= d; showDmg('m-box', d, sk.color); }
-        showDmg('p-box', "【重劈】", sk.color); 
+        if(isDummy) { finalDmg = d; } else {
+            let mDefVal = monster.defVal || 0; 
+            let mDr = Math.max(0, (monster.dr || 0) - 0.15); // 破甲效果
+            finalDmg = Math.max(1, (d - mDefVal)) * (1 - mDr);
+        }
+        finalDmg = Math.floor(finalDmg);
+        if(isDummy) combatState.zenDmgAccum += finalDmg; else monster.hp -= finalDmg; 
+        showDmg('m-box', finalDmg, sk.color); showDmg('p-box', "【重劈】", sk.color); 
     }
-    
-    updateUI();
-    return true;
+    updateUI(); return true;
 }
 
-function handleSlotClick(idx) {
-    if(!player.equippedSkills[idx]) {
-        switchView('village');
-        showSubView('path');
-    } else {
-        manualCastSkill(idx);
-    }
-}
-
-function manualCastSkill(idx) {
-    if(player.autoBoss) return; 
-    if(executeSkill(idx) && player.mapIdx !== 0 && monster.hp <= 0) handleVictory();
-}
-
+function handleSlotClick(idx) { switchLogTab('skill'); el('skill-area').scrollIntoView({ behavior: 'smooth', block: 'center' }); log(`[戰術指令] 已聚焦至第 ${idx+1} 槽位。`, "var(--accent)"); }
+function manualCastSkill(idx) { if(player.autoBoss) return; if(executeSkill(idx) && player.mapIdx !== 0 && monster.hp <= 0) handleVictory(); }
 function hasPassive(sid) { return player.equippedSkills.includes(sid); }
-
 function checkGambit(idx) {
-    let g = player.skillGambits[idx];
-    let val = player.skillGambitValues[idx];
-    let op = player.skillGambitOps[idx];
-
+    let g = player.skillGambits[idx]; let val = player.skillGambitValues[idx]; let op = player.skillGambitOps[idx];
     if(g === 0) return true; 
     if(g === 3) return monster.isBoss === true;
-    if(g === 4) { 
-        let curPct = (player.hp / getMaxHP()) * 100;
-        return op === '<' ? curPct < val : curPct > val;
-    }
-    if(g === 5) { 
-        if (monster.mhp <= 0) return false;
-        let curPct = (monster.hp / monster.mhp) * 100;
-        return op === '<' ? curPct < val : curPct > val;
-    }
+    if(g === 4) { let curPct = (player.hp / getMaxHP()) * 100; return op === '<' ? curPct < val : curPct > val; }
+    if(g === 5) { if (monster.mhp <= 0) return false; let curPct = (monster.hp / monster.mhp) * 100; return op === '<' ? curPct < val : curPct > val; }
     return false;
 }
 
+// ⚔️ 核心戰鬥迴圈 (雙層防禦、命中/閃避判定、神道秒回)
 function startBattleLoop() {
-    if(battleTimer) clearTimeout(battleTimer); if(isPaused || currentView !== 'battle' || isReviving) return;
+    if(battleTimer) clearTimeout(battleTimer); 
+    if(isPaused || currentView !== 'battle' || isReviving) return;
+    
     if(player.autoHealEnabled && player.autoHeal > 0 && (player.hp / getMaxHP()) < player.autoHeal) autoHealLogic();
     
-    let delay = Math.max(200, 1500 - player.agi * 15);
+    let delay = 1500 / (1 + player.agi * 0.025); 
+    if (delay < 200) delay = 200; 
     let tickSec = delay / 1000;
-
+    
     for(let i=0; i<4; i++) if(combatState.skillCds[i] > 0) combatState.skillCds[i] = Math.max(0, combatState.skillCds[i] - tickSec);
+    if(combatState.potionCd > 0) combatState.potionCd = Math.max(0, combatState.potionCd - tickSec);
 
-    let isDummy = player.mapIdx === 0;
-
-    if (isDummy) {
-        combatState.zenTimer += tickSec;
-        if(combatState.zenTimer >= 20) {
-            handleZenComplete();
-            combatState.zenTimer = 0;
-            combatState.zenDmgAccum = 0;
-        }
+    // 戰鬥秒回邏輯 (神道流地基)
+    if (player.hp < getMaxHP()) {
+        let regen = (getMaxHP() * 0.005) + (player.vit * 0.2); 
+        player.hp = Math.min(getMaxHP(), player.hp + (regen * tickSec));
     }
 
-    let pDmg = getAtkVal();
-    let crit = Math.min(80, 5 + (player.str * 0.15));
-    let isCrit = Math.random() * 100 < crit; if(isCrit) pDmg = Math.floor(pDmg * 1.5);
-    
+    let isDummy = player.mapIdx === 0;
+    if (isDummy) { 
+        combatState.zenTimer += tickSec; 
+        if(combatState.zenTimer >= 20) { handleZenComplete(); combatState.zenTimer = 0; combatState.zenDmgAccum = 0; } 
+    }
+
+    let baseAtk = getAtkVal(); 
+    let isCrit = false; // 保留供未來技能使用
     let skillUsed = false;
+    
     if(!isDummy ? monster.hp > 0 : true) {
         for(let i=0; i<4; i++) {
             let sid = player.equippedSkills[i];
-            if(sid && skillDB[sid].type === 'active' && combatState.skillCds[i] <= 0) {
-                if(checkGambit(i)) {
-                    if(executeSkill(i)) { skillUsed = true; break; }
-                }
+            if(sid && skillDB[sid].type === 'active' && combatState.skillCds[i] <= 0) { 
+                if(checkGambit(i)) { if(executeSkill(i)) { skillUsed = true; break; } } 
             }
         }
     }
 
-    if(!skillUsed && pDmg > 0) { 
+    // 玩家物理普攻
+    if(!skillUsed && baseAtk > 0) { 
         let hits = 1;
-        if(hasPassive('agi_combo2') && Math.random() < 0.10) { hits = 2; pDmg = Math.floor(pDmg*1.2); log(`⚡ 觸發殘影！(二連擊)`, "var(--accent)"); }
-        else if(hasPassive('agi_combo1') && Math.random() < 0.10) { pDmg = Math.floor(pDmg*1.5); log(`⚡ 觸發速擊！(1.5倍)`, "var(--accent)"); }
+        let currentAtk = baseAtk;
         
+        if(hasPassive('agi_combo2') && Math.random() < 0.10) { hits = 2; currentAtk = Math.floor(currentAtk * 1.2); log(`⚡ 觸發殘影！`, "var(--accent)"); }
+        else if(hasPassive('agi_combo1') && Math.random() < 0.10) { currentAtk = Math.floor(currentAtk * 1.5); log(`⚡ 觸發速擊！`, "var(--accent)"); }
+        
+        let skillHit = Math.random() < 1.0; 
+        let targetEva = isDummy ? 0 : (monster.eva || 0);
+
         for(let i=0; i<hits; i++) {
-            if(isDummy) {
-                combatState.zenDmgAccum += pDmg;
-                setTimeout(()=>showDmg('m-box', pDmg + (isCrit?"!!":""), isCrit?'orange':'white'), i*150);
-            } else if(monster.hp > 0) {
-                let mDef = maps[player.mapIdx].def || 0;
-                if(hasPassive('str_cleave')) mDef = Math.max(0, mDef - 0.15); 
-                let finalDmg = Math.max(1, Math.floor(pDmg * (1 - mDef)));
+            if (skillHit && (Math.random() * 100 >= targetEva)) {
+                let mDefVal = monster.defVal || 0;
+                let mDr = monster.dr || 0;
+                if(hasPassive('str_cleave')) mDr = Math.max(0, mDr - 0.15); 
                 
-                monster.hp -= finalDmg;
-                if(mDef > 0 && Math.random() < 0.2) log(`🛡️ 怪物的護甲抵消了部分傷害。`, "#666");
-                setTimeout(()=>showDmg('m-box', finalDmg + (isCrit?"!!":""), isCrit?'orange':'white'), i*150);
+                let finalDmg = Math.max(1, (currentAtk - mDefVal)) * (1 - mDr);
+                finalDmg = Math.floor(finalDmg);
+
+                if (isDummy) {
+                    combatState.zenDmgAccum += finalDmg; 
+                    setTimeout(()=>showDmg('m-box', finalDmg + (isCrit?"!!":""), isCrit?'orange':'white'), i*150);
+                } else if(monster.hp > 0) {
+                    monster.hp -= finalDmg;
+                    if(mDefVal > currentAtk && Math.random() < 0.2) log(`🛡️ 怪物護甲極厚，攻擊如同刮痧。`, "#666");
+                    setTimeout(()=>showDmg('m-box', finalDmg + (isCrit?"!!":""), isCrit?'orange':'white'), i*150);
+                }
+            } else {
+                setTimeout(()=>showDmg('m-box', "MISS", '#888'), i*150);
+            }
+        }
+    }
+
+    // 🏮 夥伴主動技能邏輯
+    if(player.helper && HELPER_DB[player.helper.id]) {
+        let hdb = HELPER_DB[player.helper.id];
+        if(!combatState.helperSkillCd) combatState.helperSkillCd = hdb.skillCd;
+        combatState.helperSkillCd -= tickSec;
+
+        if(combatState.helperSkillCd <= 0) {
+            combatState.helperSkillCd = hdb.skillCd; 
+            
+            if(hdb.skillType === 'heal') {
+                player.hp = Math.min(getMaxHP(), player.hp + hdb.skillVal);
+                showDmg('p-box', `+${hdb.skillVal}`, 'var(--quest)');
+            } else if(hdb.skillType === 'attack' && (!isDummy ? monster.hp > 0 : true)) {
+                if(isDummy) {
+                    combatState.zenDmgAccum += hdb.skillVal;
+                    showDmg('m-box', hdb.skillVal, '#fdcb6e');
+                } else {
+                    monster.hp -= hdb.skillVal;
+                    showDmg('m-box', hdb.skillVal, '#fdcb6e');
+                    log(`💥 ${hdb.name} 施放了援護攻擊！(真實傷害)`, "var(--danger)");
+                }
+            } else if(hdb.skillType === 'seal' && !isDummy && monster.hp > 0) {
+                combatState.mobAtkTimer = Math.min(5.0, combatState.mobAtkTimer + hdb.skillVal);
+                showDmg('m-box', "封印", 'var(--accent)');
+                log(`📜 ${hdb.name} 施放定身符！延緩敵人攻擊。`, "var(--accent)");
             }
         }
     }
     
+    // 怪物攻擊玩家
     if (!isDummy) {
-        if (monster.hp <= 0) {
-            handleVictory();
+        if (monster.hp <= 0) { 
+            handleVictory(); 
         } else if (monster.atk > 0) { 
             combatState.mobAtkTimer -= tickSec;
             if (combatState.mobAtkTimer <= 0) {
                 combatState.mobAtkTimer = 2.0; 
+                let myEva = Math.min(70, getEvaPercent(player.agi)); 
                 
-                let myEva = getEvaPercent(player.agi);
-                let hitRoll = Math.random() * 100;
+                if (Math.random() * 100 >= myEva) { 
+                    let pDefVal = Math.floor(player.vit * 0.5); 
+                    let pDr = getDefPercent(player.vit) / 100;
+                    
+                    let mDmg = Math.max(1, (monster.atk - pDefVal)) * (1 - pDr);
+                    mDmg = Math.floor(mDmg);
 
-                if (hitRoll > myEva) {
-                    let mDmg = Math.max(1, Math.floor(monster.atk * (1 - getDefPercent(player.vit) / 100)));
-                    if(hasPassive('vit_thorns') && Math.random() < 0.20 && mDmg > 1) {
-                        monster.hp -= mDmg;
-                        showDmg('m-box', `反震 ${mDmg}`, 'var(--cherry)');
+                    if(hasPassive('vit_thorns') && Math.random() < 0.20 && mDmg > 1) { 
+                        monster.hp -= mDmg; 
+                        showDmg('m-box', `反震 ${mDmg}`, 'var(--cherry)'); 
                     }
+                    
                     player.hp -= mDmg; 
                     showDmg('p-box', mDmg, '#ff4757');
-                } else {
-                    showDmg('p-box', "MISS", 'skyblue');
+                } else { 
+                    showDmg('p-box', "MISS", 'skyblue'); 
                 }
             }
         }
     }
 
-    if(player.hp <= 0) handleDeath();
-    updateUI(); battleTimer = setTimeout(startBattleLoop, delay);
+    if(player.hp <= 0) handleDeath(); 
+    updateUI(); 
+    battleTimer = setTimeout(startBattleLoop, delay);
 }
 
 function handleZenComplete() {
-    let baseExp = Math.max(1, Math.floor(player.next * 0.02)); 
-    let dmgExp = Math.floor(combatState.zenDmgAccum * 0.05); 
-    let totalExp = baseExp + dmgExp;
-    let goldEarn = Math.floor(player.lvl * 0.5) + 1;
-    
-    player.exp += totalExp;
-    player.gold += goldEarn;
-    player.kills++;
-    
-    log(`🧘 冥想完成。累積威力: ${combatState.zenDmgAccum}。<br>獲得 <span style="color:var(--quest)">${totalExp} 經驗</span>, ${goldEarn} 金幣。`, "#aaa");
-    checkLevelUp();
+    let baseExp = Math.max(1, Math.floor(player.next * 0.02)); let dmgExp = Math.floor(combatState.zenDmgAccum * 0.05); 
+    let totalExp = baseExp + dmgExp; let goldEarn = Math.floor(player.lvl * 0.5) + 1;
+    player.exp += totalExp; player.gold += goldEarn; player.kills++;
+    log(`🧘 冥想完成。獲得 <span style="color:var(--quest)">${totalExp} 經驗</span>, ${goldEarn} 金幣。`, "#aaa"); checkLevelUp();
 }
 
 function handleVictory() {
-    let m = maps[player.mapIdx];
-    if(!m) return;
-    
-    let expGained = 0;
-    let goldGained = 0;
-    let dropPenalty = 1;
-
-    let isOverLeveled = player.lvl > m.maxLvl;
-    if (isOverLeveled) {
-        expGained = 0;
-        goldGained = Math.max(1, Math.floor(m.baseGold * (monster.isBoss ? 5 : 1) * 0.3)); 
-        dropPenalty = 0.25; 
-    } else {
-        expGained = Math.floor(m.baseExp * (monster.isBoss ? 5 : 1));
-        goldGained = Math.floor(m.baseGold * (monster.isBoss ? 5 : 1));
-    }
-
-    player.exp += expGained; 
-    player.gold += goldGained;
+    let m = maps[player.mapIdx]; let dbMob = MOB_DB[monster.id]; if(!m || !dbMob) return;
+    let isOverLeveled = player.lvl > m.maxLvl; let expGained = isOverLeveled ? 0 : dbMob.exp; let goldGained = isOverLeveled ? Math.max(1, Math.floor(dbMob.gold * 0.3)) : dbMob.gold;
+    player.exp += expGained; player.gold += goldGained;
+    let dropMsgs = [];
+    dbMob.drops.forEach(l => { if(Math.random() < l.chance) { let amount = l.qty || 1; addItemToBag(l.id, amount); dropMsgs.push(`${getItem(l.id).name}x${amount}`); } });
 
     if(monster.isBoss) {
-        player.mats[m.matId] += 2; 
-        let drops = [`${getItem(m.matId).name} x2`];
-        if(Math.random() < 0.5) { player.mats.m0 += 2; drops.push(`${getItem('m0').name} x2`); } 
+        if(dropMsgs.length === 0) dropMsgs.push("無特別物品");
         let earnTxt = expGained > 0 ? `獲得 ${expGained} 經驗, ${goldGained} 金幣` : `境界過高，獲得 ${goldGained} 金幣`;
-        log(`🏆 擊敗首領！${earnTxt}。<br>🎁 戰利品：${drops.join("，")}`, "var(--gold)");
-
-        if (player.mapIdx < maps.length - 1) { 
-            player.mapIdx++; player.maxMapIdx = Math.max(player.maxMapIdx, player.mapIdx); 
-            openModal("🗺️ 領域擴張", `【${maps[player.mapIdx].name}】已解鎖。`, "前進"); 
-        }
+        log(`🏆 擊敗首領！${earnTxt}。<br>🎁 戰利品：${dropMsgs.join("，")}`, "var(--gold)");
+        if (player.mapIdx < maps.length - 1) { player.mapIdx++; player.maxMapIdx = Math.max(player.maxMapIdx, player.mapIdx); openModal("🗺️ 領域擴張", `【${maps[player.mapIdx].name}】已解鎖。`, "前進"); }
         player.kills = 0; updateMapSelector();
     } else {
-        if (isOverLeveled) {
-            if(Math.random() < 0.05) log("⚠️ 怪物過於弱小，無法獲得修行經驗。", "var(--danger)");
-        } else {
-            if (Math.random() < m.dropRate * dropPenalty) { player.potions.p1++; log(`🎁 獲得：${getItem('p1').name} x1`, "var(--quest)"); }
-            if (Math.random() < 0.05 * dropPenalty) { player.mats[m.matId]++; log(`💎 獲得：${getItem(m.matId).name} x1`, "var(--mat)"); }
-            if (Math.random() < 0.10 * dropPenalty) { player.mats.m0++; log(`⚙️ 獲得：${getItem('m0').name} x1`, "#aaa"); }
-        }
+        if(isOverLeveled && Math.random() < 0.05) log("⚠️ 怪物過弱，無修行經驗。", "var(--danger)");
+        if(dropMsgs.length > 0) log(`🎁 獲得：${dropMsgs.join(", ")}`, "var(--quest)");
         if(player.mapIdx == player.maxMapIdx && player.kills < 10) player.kills++;
     }
-
-    checkLevelUp(); spawn();
+    checkLevelUp(); 
+    
+    // 🏮 扣除夥伴場次
+    if (player.mapIdx !== 0 && player.helper && player.helper.left > 0) {
+        player.helper.left--;
+        if (player.helper.left === 0) {
+            log(`⛩️ ${HELPER_DB[player.helper.id].name} 的合約已到期，轉身離開了。`, "var(--cherry)");
+            player.helper = null;
+        }
+    }
+    
+    spawn();
 }
 
-function resetCombatState() {
-    combatState.mobAtkTimer = 2.0;
-    combatState.skillCds = [0, 0, 0, 0];
-    combatState.zenTimer = 0;
-    combatState.zenDmgAccum = 0;
-}
+function addItemToBag(id, qty) { let item = getItem(id); if(item.cat === 'rec') { if(!player.potions[id]) player.potions[id] = 0; player.potions[id] += qty; } else if(item.cat === 'mat') { if(!player.mats[id]) player.mats[id] = 0; player.mats[id] += qty; } }
+function resetCombatState() { combatState.mobAtkTimer = 2.0; combatState.skillCds = [0, 0, 0, 0]; combatState.zenTimer = 0; combatState.zenDmgAccum = 0; combatState.potionCd = 0; combatState.helperSkillCd = 0; }
 
 function handleDeath() { 
-    if(player.revives > 0) { 
-        player.revives--; 
-        log("🛡️ 不死御守發效！靈魂回歸肉身。", "var(--gold)"); 
-        player.hp = getMaxHP(); 
-        updateUI(); 
-        return; 
-    } 
-    log(`💀 魂火熄滅... 正在等待靈魂重塑。`, "var(--danger)"); 
-    player.hp = 0; 
-    isReviving = true; 
-    resetCombatState(); 
-    
-    if(monster.isBoss) { 
-        player.autoBoss = false; 
-        setTimeout(() => spawn(false), 500); 
-    } 
-    let sec = 5; 
-    const ov = el('revive-timer-overlay'); 
-    const txt = el('revive-seconds'); 
-    if(ov) ov.classList.remove('hidden'); 
-    if(txt) txt.innerText = sec; 
-    
+    if(player.revives > 0) { player.revives--; log("🛡️ 不死御守發效！靈魂回歸肉身。", "var(--gold)"); player.hp = getMaxHP(); updateUI(); return; } 
+    log(`💀 魂火熄滅... 正在等待靈魂重塑。`, "var(--danger)"); player.hp = 0; isReviving = true; resetCombatState(); 
+    if(monster.isBoss) { player.autoBoss = false; setTimeout(() => spawn(false), 500); } 
+    let sec = 5; const ov = el('revive-timer-overlay'); const txt = el('revive-seconds'); if(ov) ov.classList.remove('hidden'); if(txt) txt.innerText = sec; 
     const timer = setInterval(() => { 
-        sec--; 
-        if(txt) txt.innerText = sec; 
-        updateUI(); 
-        if(sec <= 0) { 
-            clearInterval(timer); 
-            if(ov) ov.classList.add('hidden'); 
-            isReviving = false; 
-            player.hp = getMaxHP(); 
-            log("✨ 靈魂重塑完成，修行繼續。", "var(--quest)"); 
-            if(currentView === 'battle') { 
-                isPaused = false; 
-                startBattleLoop(); 
-            } 
-            updateUI(); 
-        } 
+        sec--; if(txt) txt.innerText = sec; updateUI(); 
+        if(sec <= 0) { clearInterval(timer); if(ov) ov.classList.add('hidden'); isReviving = false; player.hp = getMaxHP(); log("✨ 靈魂重塑完成，修行繼續。", "var(--quest)"); if(currentView === 'battle') { isPaused = false; startBattleLoop(); } updateUI(); } 
     }, 1000); 
 }
 
-function checkLevelUp() {
-    while(player.exp >= player.next) {
-        player.lvl++; player.exp -= player.next; player.next = Math.floor(player.next * 1.3); player.statPoints += 3;
-        player.hp = getMaxHP(); log("🎉 境界提升！體力已恢復。", "var(--cherry)");
-        checkSkillUnlocks();
-    }
+function checkLevelUp() { 
+    while(player.exp >= player.next) { 
+        player.lvl++; 
+        player.exp -= player.next; 
+        // 宗師優化：改用階梯式增長，Lv.20 前較快，Lv.20 後平穩
+        let growth = player.lvl < 20 ? 1.2 : 1.1; 
+        player.next = Math.floor(player.next * growth) + (player.lvl * 5); 
+        player.statPoints += 3; 
+        player.hp = getMaxHP(); 
+        log("🎉 境界提升！體力已恢復。", "var(--cherry)"); 
+        checkSkillUnlocks(); 
+    } 
 }
 
 function spawn(boss = false) {
-    let m = maps[player.mapIdx];
-    if(!m) return;
+    let m = maps[player.mapIdx]; if(!m) return; 
     combatState.mobAtkTimer = 2.0; 
+    let mobId = "";
     
-    if(m.name === "[修行] 幽靜道場") {
-        monster = { name: "朽木樁", hp: 1, mhp: 1, atk: 0, lvl: 1, isBoss: false }; 
+    // 生成邏輯：判斷是木樁、BOSS還是小怪
+    if(m.name === "[修行] 幽靜道場") { 
+        mobId = "m_dummy"; 
+    } else if (boss && m.boss) { 
+        mobId = m.boss; 
+    } else {
+        if (m.rareMob && Math.random() < m.rareMob.chance) { 
+            mobId = m.rareMob.id; 
+            log(`⚠️ 遭遇了稀有怪物：${MOB_DB[mobId].name}！`, "var(--gold)");
+        } else { 
+            mobId = m.mobs[Math.floor(Math.random() * m.mobs.length)]; 
+        }
     }
-    else if(boss && m.boss) { monster = { name: "【BOSS】"+m.boss, hp: m.bossHp, mhp: m.bossHp, atk: m.bossAtk, lvl: player.mapIdx*5+5, isBoss: true }; }
-    else {
-        monster = { name: m.mobs[Math.floor(Math.random()*m.mobs.length)], hp: m.baseHp, mhp: m.baseHp, atk: m.baseAtk, lvl: player.mapIdx*5+1, isBoss: false };
-        if(player.kills >= 10 && player.mapIdx == player.maxMapIdx && player.autoBoss && m.boss) setTimeout(() => spawn(true), 1000);
+    
+    let dbMob = MOB_DB[mobId]; 
+    if(dbMob) {
+        // --- 宗師級：自動等級逆推公式 ---
+        let calcHP = dbMob.hp / 15;
+        let calcATK = dbMob.atk * 2.2;
+        let calcDEF = (dbMob.defVal || 0) * 3.5;
+        let calcEVA = (dbMob.eva || 0) * 1.5;
+        let autoLvl = Math.max(1, Math.ceil((calcHP + calcATK + calcDEF + calcEVA) / 10));
+
+        monster = { 
+            id: mobId, 
+            name: dbMob.name, 
+            hp: dbMob.hp, 
+            mhp: dbMob.hp, 
+            atk: dbMob.atk, 
+            defVal: dbMob.defVal || 0, // 防禦定值
+            dr: dbMob.dr || 0,         // 減傷率
+            eva: dbMob.eva || 0,       // 閃避率
+            lvl: autoLvl,              // 自動生成的等級
+            isBoss: dbMob.isBoss || false 
+        };
     }
-    let btn = el('btn-boss');
+    
+    // BOSS挑戰按鈕狀態更新
+    let btn = el('btn-boss'); 
     if(btn) btn.disabled = (player.kills < 10 || monster.isBoss || isReviving || !m.boss);
 }
 
 function getMaxHP() { return player.vit * 50 + 50; }
 
-function updateVillageMenuCard() {
-    let pathCard = el('card-path'); if(!pathCard) return;
-    pathCard.innerHTML = `<h3 style="color:var(--cherry); margin:5px 0;">📜 秘技捲軸</h3><p style="margin:0; font-size:0.8em; color:#aaa;">裝備與切換技能</p>`;
-}
-
 function updateMapSelector() { 
     const mapArea = el('map-ui-area');
     if(mapArea) {
-        mapArea.innerHTML = `<select id="map-selector" onchange="changeMap()"></select>`;
+        mapArea.innerHTML = `<select id="map-selector" onchange="changeMap()" style="font-size:1.05em; padding:4px;"></select>`;
         const sel = el('map-selector');
-        if(sel) {
-            for(let i=0; i<=player.maxMapIdx; i++) {
-                let opt = document.createElement('option');
-                opt.value = i;
-                opt.innerText = maps[i].name;
-                if(player.mapIdx === i) opt.selected = true;
-                sel.appendChild(opt);
-            }
-        }
+        if(sel) { for(let i=0; i<=player.maxMapIdx; i++) { let opt = document.createElement('option'); opt.value = i; opt.innerText = maps[i].name; if(player.mapIdx === i) opt.selected = true; sel.appendChild(opt); } }
     }
     let mInfo = el('map-info');
     if(mInfo && maps[player.mapIdx]) {
         let m = maps[player.mapIdx];
-        if (m.name === "[修行] 幽靜道場") {
-            mInfo.innerHTML = `安全區域：每 20 秒結算一次修行經驗。`;
-        } else {
-            let penaltyTxt = player.lvl > m.maxLvl ? `<span style="color:var(--danger); font-weight:bold;"> (過低: 經驗 0/金幣衰減)</span>` : "";
-            let lvlLimitTxt = m.maxLvl === 999 ? "MAX" : m.maxLvl;
-            mInfo.innerHTML = `適合等級: ${m.minLvl}~${lvlLimitTxt}${penaltyTxt}<br>報酬: 經驗 ${m.baseExp} / 金幣 ${m.baseGold} <br><span style="color:var(--mat)">掉落: ${getItem('m0').name}, ${getItem(m.matId).name}</span>`;
+        if (m.name === "[修行] 幽靜道場") mInfo.innerHTML = `安全區域：每 20 秒結算一次修行經驗。`;
+        else { 
+            let penaltyTxt = player.lvl > m.maxLvl ? `<span style="color:var(--danger); font-weight:bold;"> (經驗衰減)</span>` : ""; 
+            let lvlLimitTxt = m.maxLvl === 999 ? "MAX" : m.maxLvl; 
+            
+            let dropSet = new Set();
+            if(m.mobs) m.mobs.forEach(mobId => MOB_DB[mobId].drops.forEach(d => dropSet.add(getItem(d.id).name)));
+            if(m.boss) MOB_DB[m.boss].drops.forEach(d => dropSet.add(getItem(d.id).name));
+            if(m.rareMob) MOB_DB[m.rareMob.id].drops.forEach(d => dropSet.add(getItem(d.id).name));
+            let dropStr = Array.from(dropSet).join("、 ") || "無";
+
+            mInfo.innerHTML = `適合等級: ${m.minLvl}~${lvlLimitTxt}${penaltyTxt}<br>報酬: <span style="color:var(--quest);">${dropStr}</span>`; 
         }
     }
 }
 
-function updateUI() {
-    if(el('p-name')) el('p-name').innerText = player.name || "無名者"; 
-    if(el('p-display-name')) el('p-display-name').innerText = player.name || "無名者"; 
-    if(el('p-lvl')) el('p-lvl').innerText = player.lvl;
-    if(el('p-gold')) el('p-gold').innerText = player.gold.toLocaleString();
+// 🎒 處理分頁切換
+function switchLogTab(type) {
+    currentLogTab = type;
+    el('tab-log-btn').classList.toggle('active', type === 'log'); 
+    el('tab-inv-btn').classList.toggle('active', type === 'inv'); 
+    el('tab-skill-btn').classList.toggle('active', type === 'skill');
+    el('tab-helper-btn').classList.toggle('active', type === 'helper'); 
     
-    ['str','vit','agi'].forEach(s => {
-        if(el(`p-${s}-val`)) el(`p-${s}-val`).innerText = player[s]; 
-        if(el(`stat-${s}`)) el(`stat-${s}`).innerText = player[s]; 
-        if(el(`pre-${s}`)) el(`pre-${s}`).innerText = statPreview[s] > 0 ? `+${statPreview[s]}` : ""; 
+    el('log').classList.toggle('hidden', type !== 'log'); 
+    el('inv-area').classList.toggle('hidden', type !== 'inv'); 
+    el('skill-area').classList.toggle('hidden', type !== 'skill');
+    el('helper-area').classList.toggle('hidden', type !== 'helper'); 
+    
+    if(type === 'inv') renderBag(); 
+    if(type === 'skill') renderPath();
+    if(type === 'helper') renderHelper();
+}
+
+function setInvFilter(cat) { currentInvFilter = cat; document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active')); el(`fb-${cat}`).classList.add('active'); renderBag(); }
+
+function renderBag() {
+    const listEl = el('inv-list'); if(!listEl) return; listEl.innerHTML = "";
+    let bagItems = [];
+    for(let k in player.potions) if(player.potions[k] > 0) bagItems.push({id: k, count: player.potions[k]});
+    for(let k in player.mats) if(player.mats[k] > 0) bagItems.push({id: k, count: player.mats[k]});
+    
+    let filtered = bagItems.filter(item => { if(currentInvFilter === 'all') return true; return getItem(item.id).cat === currentInvFilter; });
+    if(filtered.length === 0) { listEl.innerHTML = "<div style='color:#555; text-align:center; padding:30px; font-size:1.1em;'>此類別目前沒有物品</div>"; return; }
+
+    filtered.forEach(slot => {
+        let db = getItem(slot.id);
+        let checkHtml = db.sellable ? `<input type="checkbox" class="bag-check" data-id="${slot.id}">` : `<div style="width:16px;"></div>`;
+        let qtyInputHtml = db.sellable ? `<input type="number" class="bag-qty-input" data-id="${slot.id}" value="1" min="1" max="${slot.count}">` : `<span style="color:#444; font-size:12px;">-</span>`;
+
+        listEl.innerHTML += `
+        <div class="inv-row ${db.cat}">
+            ${checkHtml}
+            <div style="flex:1; margin-left:10px;">
+                <div style="color:#eee; font-size:1.05em;">${db.name} <b style="color:var(--gold)">x${slot.count}</b></div>
+                <div style="color:#666; font-size:0.85em;">單價: $${db.sellPrice}</div>
+            </div>
+            <div style="text-align:right; display:flex; align-items:center; gap:5px;">
+                <span style="font-size:12px; color:#555;">賣出數量:</span>
+                ${qtyInputHtml}
+            </div>
+        </div>`;
     });
-    if(el('stat-points')) el('stat-points').innerText = player.statPoints;
-    if(el('alloc-btns')) el('alloc-btns').classList.toggle('hidden', (statPreview.str + statPreview.vit + statPreview.agi) === 0);
 
-    let curAtk = Math.floor(player.str * 1.5) + ((player.gear.arms || 0) * 3);
-    let curSpd = (Math.max(200, 1500 - player.agi * 15) / 1000).toFixed(2);
-    let curDef = (Math.min(90, (player.vit <= 100 ? player.vit * 0.5 : player.vit <= 300 ? 50 + (player.vit - 100) * 0.1 : 70 + (player.vit - 300) * 0.05) + ((player.gear.body || 0) * 1.5))).toFixed(1);
-    let curEva = (Math.min(60, (player.agi <= 100 ? player.agi * 0.5 : player.agi <= 300 ? 50 + (player.agi - 100) * 0.1 : 70 + (player.agi - 300) * 0.05) + ((player.gear.legs || 0) * 1.0))).toFixed(1);
+    listEl.innerHTML += `
+        <div style="position: sticky; bottom: 0; background: #000; padding: 12px 0; border-top: 1px solid #333; margin-top: 10px; text-align:center;">
+            <button class="btn-action" style="width:90%; background:linear-gradient(180deg, #ffd700, #b8860b); color:#000; border-radius:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5); font-size:1em;" 
+            onclick="executeSelectedSell()">💰 賣出選中物品</button>
+        </div>`;
+}
 
-    let tempStr = player.str + statPreview.str;
-    let tempVit = player.vit + statPreview.vit;
-    let tempAgi = player.agi + statPreview.agi;
+function executeSelectedSell() {
+    let checkBoxes = document.querySelectorAll('.bag-check:checked');
+    if(checkBoxes.length === 0) return log("❌ 請先勾選要賣出的物品。", "var(--danger)");
+    let totalEarned = 0; let soldSummary = [];
+    checkBoxes.forEach(cb => {
+        let id = cb.getAttribute('data-id'); let db = getItem(id); let qtyInput = document.querySelector(`.bag-qty-input[data-id="${id}"]`); let sellQty = parseInt(qtyInput.value);
+        let currentOwn = (db.cat === 'rec') ? (player.potions[id] || 0) : (player.mats[id] || 0);
+        if(isNaN(sellQty) || sellQty <= 0) return; if(sellQty > currentOwn) sellQty = currentOwn;
+        totalEarned += db.sellPrice * sellQty;
+        if(db.cat === 'rec') player.potions[id] -= sellQty; else player.mats[id] -= sellQty;
+        soldSummary.push(`${db.name}x${sellQty}`);
+    });
+    if(totalEarned > 0) { player.gold += totalEarned; log(`💰 變賣清單：${soldSummary.join(", ")}，共入帳 ${totalEarned} 金幣！`, "var(--gold)"); updateUI(); renderBag(); }
+}
 
-    if(el('det-atk')) {
-        let nAtk = Math.floor(tempStr * 1.5) + ((player.gear.arms || 0) * 3);
-        let diff = nAtk - curAtk;
-        el('det-atk').innerHTML = `${curAtk}${diff > 0 ? ` <span style="color:lime; font-size:0.9em;">+${diff}</span>` : ""}`;
+function renderPath() {
+    const c = el('skill-area'); if(!c) return;
+    let html = `<p style="font-size:1.05em; color:var(--gold); margin:5px 0; border-bottom:1px solid #333; padding-bottom:5px;">已領悟的秘技：</p><div style="display:flex; flex-direction:column; gap:8px; text-align:left;">`;
+    if(!player.unlockedSkills || player.unlockedSkills.length === 0) { html += `<div style="color:#666; text-align:center; padding: 20px;">尚無領悟任何秘技...</div>`; 
+    } else {
+        player.unlockedSkills.forEach(sid => {
+            let sk = skillDB[sid]; let isEqIdx = player.equippedSkills.indexOf(sid); let isEq = isEqIdx !== -1;
+            let btnAction = isEq ? `unequipSkill(${isEqIdx})` : `equipSkill('${sid}')`; let btnText = isEq ? '卸下' : '裝備';
+            let btnColor = isEq ? 'var(--danger)' : 'var(--quest)'; let btnFontColor = isEq ? '#fff' : '#000';
+            let tacticHtml = "";
+            if (isEq && sk.type === 'active') {
+                let i = isEqIdx;
+                tacticHtml = `
+                    <div style="margin-top:10px; border-top:1px dashed #444; padding-top:10px; display:flex; gap:8px; align-items:center;">
+                        <span style="font-size:0.9em; color:#aaa;">戰術:</span>
+                        <select style="flex:1; font-size:0.9em; background:#000; color:white; border:1px solid #666; padding:4px;" onchange="updateGambit(${i}, this.value)">
+                            <option value="0" ${player.skillGambits[i]==0?'selected':''}>始終施放</option><option value="3" ${player.skillGambits[i]==3?'selected':''}>僅對首領</option>
+                            <option value="4" ${player.skillGambits[i]==4?'selected':''}>我方 HP</option><option value="5" ${player.skillGambits[i]==5?'selected':''}>敵方 HP</option>
+                        </select>`;
+                if(player.skillGambits[i] >= 4) { tacticHtml += `<span style="cursor:pointer; background:#333; color:var(--gold); padding:2px 8px; border-radius:3px; user-select:none; font-size:1.1em;" onclick="toggleGambitOp(${i})">${player.skillGambitOps[i] === '<' ? '&lt;' : '&gt;'}</span><input type="number" value="${player.skillGambitValues[i]}" style="width:50px; background:#000; color:white; border:1px solid #555; text-align:center; font-size:1em;" onchange="updateGambitVal(${i}, this.value)"> <span style="font-size:0.9em;">%</span>`; }
+                tacticHtml += `</div>`;
+            }
+            html += `
+            <div style="background:#1a1a2e; padding:12px; border-left:4px solid ${sk.type==='active'?'var(--skill)':'var(--passive)'}; border-radius:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div><b style="color:${sk.color}; font-size:1.1em;">${sk.name}</b><span style="font-size:0.85em; color:#888; margin-left:8px;">${isEq ? `(裝備於第 ${isEqIdx+1} 槽)` : ''}</span><br><small style="color:#ddd; font-size:0.95em;">${sk.desc}</small></div>
+                    <button class="btn-action" style="padding:6px 15px; font-size:0.95em; background:${btnColor}; color:${btnFontColor}; border-radius:4px;" onclick="${btnAction}">${btnText}</button>
+                </div>${tacticHtml}
+            </div>`;
+        });
     }
-    if(el('det-spd')) {
-        let nSpd = (Math.max(200, 1500 - tempAgi * 15) / 1000).toFixed(2);
-        let diff = (nSpd - curSpd).toFixed(2);
-        el('det-spd').innerHTML = `${curSpd}${diff < 0 ? ` <span style="color:var(--accent); font-size:0.9em;">${diff}</span>` : ""}s`;
+    c.innerHTML = html + `</div>`;
+}
+
+// ⛩️ 渲染夥伴分頁
+function renderHelper() {
+    const c = el('helper-area'); if(!c) return;
+    if(!player.helper || !HELPER_DB[player.helper.id]) {
+        c.innerHTML = `<div style="text-align:center; color:#666; padding:30px; line-height:1.6;">身邊空無一物...<br><br>請前往結界之里的【居酒屋】尋找結契的夥伴。</div>`;
+        return;
     }
-    if(el('det-def')) {
-        let nDefVal = tempVit <= 100 ? tempVit * 0.5 : tempVit <= 300 ? 50 + (tempVit - 100) * 0.1 : 70 + (tempVit - 300) * 0.05;
-        let nDef = Math.min(90, nDefVal + ((player.gear.body || 0) * 1.5)).toFixed(1);
-        let diff = (nDef - curDef).toFixed(1);
-        el('det-def').innerHTML = `${curDef}${diff > 0 ? ` <span style="color:lime; font-size:0.9em;">+${diff}</span>` : ""}%`;
-    }
-    if(el('det-eva')) {
-        let nEvaVal = tempAgi <= 100 ? tempAgi * 0.5 : tempAgi <= 300 ? 50 + (tempAgi - 100) * 0.1 : 70 + (tempAgi - 300) * 0.05;
-        let nEva = Math.min(60, nEvaVal + ((player.gear.legs || 0) * 1.0)).toFixed(1);
-        let diff = (nEva - curEva).toFixed(1);
-        el('det-eva').innerHTML = `${curEva}${diff > 0 ? ` <span style="color:lime; font-size:0.9em;">+${diff}</span>` : ""}%`;
-    }
+    let hdb = HELPER_DB[player.helper.id];
+    let leftTxt = player.helper.left === -1 ? '<span style="color:var(--quest); font-weight:bold;">永久結契</span>' : `<span style="color:var(--danger); font-weight:bold;">剩餘 ${player.helper.left} 場</span>`;
+    c.innerHTML = `
+        <div style="background:#1a1a2e; border:1px solid #fdcb6e; border-radius:8px; padding:20px; text-align:center; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+            <h3 style="color:#fdcb6e; margin-top:0; font-size:1.3em;">⛩️ ${hdb.name}</h3>
+            <p style="color:#aaa; font-size:1em; margin: 15px 0;">${hdb.desc}</p>
+            <div style="margin-top:20px; font-size:1.1em; background:#000; padding:10px; border-radius:5px; border:1px solid #333;">合約狀態：${leftTxt}</div>
+            <div style="margin-top:15px; font-size:0.85em; color:#666;">夥伴會自動在戰鬥中施放技能，並提供被動加成。<br>※道場冥想不消耗場次。</div>
+        </div>
+    `;
+}
+
+function updateGambit(slotIdx, val) { player.skillGambits[slotIdx] = parseInt(val); updateUI(); renderPath(); saveGame(false); }
+function updateGambitVal(idx, val) { let n = parseInt(val); if(isNaN(n)) n = 0; player.skillGambitValues[idx] = Math.max(0, Math.min(100, n)); saveGame(false); }
+function toggleGambitOp(idx) { player.skillGambitOps[idx] = (player.skillGambitOps[idx] === '<') ? '>' : '<'; renderPath(); saveGame(false); }
+
+function equipSkill(sid) { 
+    let emptyIdx = player.equippedSkills.indexOf(null); 
+    if(emptyIdx !== -1) { player.equippedSkills[emptyIdx] = sid; player.skillGambits[emptyIdx] = 0; player.skillGambitValues[emptyIdx] = 50; player.skillGambitOps[emptyIdx] = '<'; renderPath(); updateUI(); log(`📜 裝備了秘技：${skillDB[sid].name}`, "var(--quest)"); saveGame(false); 
+    } else { openModal("槽位已滿", "4個技能槽已滿，請先卸下其他技能。", "知道了"); } 
+}
+function unequipSkill(idx) { player.equippedSkills[idx] = null; player.skillGambits[idx] = 0; combatState.skillCds[idx] = 0; renderPath(); updateUI(); log("📜 已卸下秘技。", "#aaa"); saveGame(false); }
+
+function updateUI() {
+    if(el('p-name')) el('p-name').innerText = player.name || "無名者"; if(el('p-display-name')) el('p-display-name').innerText = player.name || "無名者"; if(el('p-lvl')) el('p-lvl').innerText = player.lvl; if(el('p-gold')) el('p-gold').innerText = player.gold.toLocaleString();
+    ['str','vit','agi'].forEach(s => { if(el(`p-${s}-val`)) el(`p-${s}-val`).innerText = player[s]; if(el(`stat-${s}`)) el(`stat-${s}`).innerText = player[s]; if(el(`pre-${s}`)) el(`pre-${s}`).innerText = statPreview[s] > 0 ? `+${statPreview[s]}` : ""; });
+    if(el('stat-points')) el('stat-points').innerText = player.statPoints; if(el('alloc-btns')) el('alloc-btns').classList.toggle('hidden', (statPreview.str + statPreview.vit + statPreview.agi) === 0);
+
+    let curAtk = getAtkVal(); 
+    let curSpd = (1.5 / (1 + player.agi * 0.025)).toFixed(2); 
+    let curDef = getDefPercent(player.vit).toFixed(1); 
+    let curEva = getEvaPercent(player.agi).toFixed(1);
+
+    let tempStr = player.str + statPreview.str; let tempVit = player.vit + statPreview.vit; let tempAgi = player.agi + statPreview.agi;
+
+    if(el('det-atk')) { let nAtk = curAtk + Math.floor(tempStr*1.5) - Math.floor(player.str*1.5); let diff = nAtk - curAtk; el('det-atk').innerHTML = `${curAtk}${diff > 0 ? ` <span style="color:lime; font-size:0.9em;">+${diff}</span>` : ""}`; }
+    if(el('det-spd')) { let nSpd = (1.5 / (1 + tempAgi * 0.025)).toFixed(2); let diff = (nSpd - curSpd).toFixed(2); el('det-spd').innerHTML = `${curSpd}${diff < 0 ? ` <span style="color:var(--accent); font-size:0.9em;">${diff}s</span>` : ""}s`; }
+    if(el('det-def')) { let nDefVal = tempVit <= 100 ? tempVit * 0.5 : tempVit <= 300 ? 50 + (tempVit - 100) * 0.1 : 70 + (tempVit - 300) * 0.05; let diff = (nDefVal - (player.vit <= 100 ? player.vit*0.5 : player.vit<=300 ? 50+(player.vit-100)*0.1 : 70+(player.vit-300)*0.05)).toFixed(1); el('det-def').innerHTML = `${curDef}${diff > 0 ? ` <span style="color:lime; font-size:0.9em;">+${diff}%</span>` : ""}%`; }
+    if(el('det-eva')) { let nEvaVal = tempAgi <= 50 ? tempAgi * 0.6 : 30 + (tempAgi - 50) * 0.2; let oldEvaBase = player.agi <= 50 ? player.agi * 0.6 : 30 + (player.agi - 50) * 0.2; let diff = (nEvaVal - oldEvaBase).toFixed(1); el('det-eva').innerHTML = `${curEva}${diff > 0 ? ` <span style="color:lime; font-size:0.9em;">+${diff}%</span>` : ""}%`; }
 
     if(el('p-hp-bar')) el('p-hp-bar').style.width = (player.hp / getMaxHP() * 100) + "%";
-    
-    if(el('p-hp-text')) {
-        if(isReviving) {
-            let sec = el('revive-seconds') ? el('revive-seconds').innerText : "5";
-            el('p-hp-text').innerHTML = `<span style="color:var(--gold); font-weight:bold;">💀 靈魂重塑中... ${sec}s</span>`;
-        } else {
-            el('p-hp-text').innerText = `${Math.floor(player.hp)} / ${getMaxHP()}`;
-        }
-    }
-
+    if(el('p-hp-text')) { if(isReviving) el('p-hp-text').innerHTML = `<span style="color:var(--gold); font-weight:bold;">💀 重塑中...</span>`; else el('p-hp-text').innerText = `${Math.floor(player.hp)} / ${getMaxHP()}`; }
     if(el('p-exp-bar')) el('p-exp-bar').style.width = (player.exp / player.next * 100) + "%";
     if(el('p-exp-text')) el('p-exp-text').innerText = `${player.exp} / ${player.next}`;
     
     if(el('m-name')) el('m-name').innerHTML = monster.name;
-    let mHpBar = el('m-hp-bar');
-    let mHpText = el('m-hp-text');
-    let mSubInfo = el('m-sub-info');
+    let mHpBar = el('m-hp-bar'); let mHpText = el('m-hp-text'); let mSubInfo = el('m-sub-info');
     
     if(player.mapIdx === 0) {
         if(mHpBar) { mHpBar.className = 'zen-fill'; mHpBar.style.width = (combatState.zenTimer / 20 * 100) + "%"; }
-        if(mHpText) mHpText.innerText = "冥想中...";
-        if(mSubInfo) mSubInfo.innerHTML = `累積威力: <span style="color:var(--gold)">${combatState.zenDmgAccum}</span>`;
+        if(mHpText) mHpText.innerText = "冥想中..."; if(mSubInfo) mSubInfo.innerHTML = `累積威力: <span style="color:var(--gold)">${combatState.zenDmgAccum}</span>`;
     } else {
         if(mHpBar) { mHpBar.className = 'hp-fill'; mHpBar.style.width = (monster.mhp > 0 ? (monster.hp / monster.mhp * 100) : 0) + "%"; }
-        if(mHpText) mHpText.innerText = `${Math.floor(monster.hp)} / ${monster.mhp}`;
-        if(mSubInfo) mSubInfo.innerHTML = `Lv. <span id="m-lvl">${monster.lvl}</span>`;
+        if(mHpText) mHpText.innerText = `${Math.floor(monster.hp)} / ${monster.mhp}`; if(mSubInfo) mSubInfo.innerHTML = `Lv. ${monster.lvl}`;
+    }
+
+    // 🏮 更新戰鬥畫面的夥伴顯示
+    let hInfo = el('helper-info');
+    if(hInfo) { 
+        if(player.helper && HELPER_DB[player.helper.id]) {
+            let leftTxt = player.helper.left === -1 ? '永久' : `剩餘 ${player.helper.left} 場`;
+            hInfo.innerText = `⛩️ 夥伴：${HELPER_DB[player.helper.id].name} (${leftTxt})`; 
+        } else { hInfo.innerText = ""; } 
     }
     
     document.querySelectorAll('.btn-plus').forEach(b => b.disabled = (player.statPoints <= 0 || isReviving));
     if(el('auto-boss-check')) el('auto-boss-check').checked = player.autoBoss;
     
-    let pCount = el('potion-count');
-    if(pCount && player.potions && player.potions[player.selectedPotion] !== undefined) {
-        pCount.innerText = player.potions[player.selectedPotion];
-    } else if (pCount) { pCount.innerText = 0; }
+    let pCount = el('potion-count'); if(pCount && player.potions && player.potions[player.selectedPotion] !== undefined) pCount.innerText = player.potions[player.selectedPotion];
     if(el('revive-count')) el('revive-count').innerText = player.revives;
     
-    if(el('kill-text')) {
-        if(player.mapIdx === 0) el('kill-text').innerHTML = `修行輪迴: <span id="kill-count">${player.kills}</span>`;
-        else el('kill-text').innerHTML = `擊殺: <span id="kill-count">${player.kills}</span>/10`;
-    }
-    
-    let mInfo = el('map-info');
-    if(mInfo && mInfo.innerHTML === "") updateMapSelector();
+    let btnManual = el('btn-manual-heal');
+    if(btnManual) { if(combatState.potionCd > 0) { btnManual.innerText = `冷卻 ${Math.ceil(combatState.potionCd)}s`; btnManual.style.background = "#444"; } else { btnManual.innerText = "手動"; btnManual.style.background = "var(--cherry)"; } }
+    if(el('kill-text')) { if(player.mapIdx === 0) el('kill-text').innerHTML = `輪迴: ${player.kills}`; else el('kill-text').innerHTML = `擊殺: ${player.kills}/10`; }
+    let mInfo = el('map-info'); if(mInfo && mInfo.innerHTML === "") updateMapSelector();
     
     if(player.equippedSkills) {
         for(let i=0; i<4; i++) {
-            let slotEl = el(`slot-${i}`);
-            if(!slotEl) continue;
-            let sid = player.equippedSkills[i];
-            if(!sid || !skillDB[sid]) {
-                slotEl.className = "skill-slot empty"; 
-                slotEl.innerHTML = "空 <small style='font-size:0.7em'>(點擊裝備)</small>";
-                slotEl.style.opacity = "1.0";
-            } else {
-                let sk = skillDB[sid];
-                let isAct = sk.type === 'active';
-                let isGambitReady = isAct ? checkGambit(i) : true;
-                slotEl.style.opacity = (isAct && !isGambitReady) ? "0.4" : "1.0"; 
-                
-                slotEl.className = `skill-slot ${isAct ? 'active' : 'passive'}`;
+            let slotEl = el(`slot-${i}`); if(!slotEl) continue; let sid = player.equippedSkills[i];
+            if(!sid || !skillDB[sid]) { slotEl.className = "skill-slot empty"; slotEl.innerHTML = `空 <br><small style="color:#555;">(點擊配置)</small>`; slotEl.style.opacity = "1.0"; } 
+            else {
+                let sk = skillDB[sid]; let isAct = sk.type === 'active'; let isGambitReady = isAct ? checkGambit(i) : true;
+                slotEl.style.opacity = (isAct && !isGambitReady) ? "0.4" : "1.0"; slotEl.className = `skill-slot ${isAct ? 'active' : 'passive'}`;
                 let html = `<b style="color:${sk.color}">${sk.name}</b>`;
-                if(isAct && combatState.skillCds[i] > 0) {
-                    let perc = (combatState.skillCds[i] / sk.cd) * 100;
-                    html += `<div class="skill-cd-overlay" style="height:${perc}%;">${Math.ceil(combatState.skillCds[i])}s</div>`;
-                }
+                if(isAct && combatState.skillCds[i] > 0) html += `<div class="skill-cd-overlay" style="height:${(combatState.skillCds[i] / sk.cd) * 100}%;">${Math.ceil(combatState.skillCds[i])}s</div>`;
                 slotEl.innerHTML = html;
             }
         }
     }
-    updateVillageMenuCard();
+    
+    if(currentLogTab === 'inv') {
+        const activeEl = document.activeElement; const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT');
+        if(!isEditing) renderBag();
+    }
+    if(currentLogTab === 'skill') {
+        const activeEl = document.activeElement; const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT');
+        if(!isEditing) renderPath();
+    }
+    if(currentLogTab === 'helper') renderHelper();
 }
 
 function previewStat(t) { if(player.statPoints > 0) { player.statPoints--; statPreview[t]++; updateUI(); } }
 function cancelPreview() { player.statPoints += (statPreview.str + statPreview.vit + statPreview.agi); statPreview = { str: 0, vit: 0, agi: 0 }; updateUI(); }
-function confirmStats() {
-    player.str += statPreview.str; 
-    player.vit += statPreview.vit; 
-    player.agi += statPreview.agi;
-    player.hp = getMaxHP(); 
-    
-    statPreview = { str: 0, vit: 0, agi: 0 }; 
-    log("✔ 屬性已固化。", "var(--quest)"); 
-    checkSkillUnlocks(); 
-    updateUI();
-}
+function confirmStats() { player.str += statPreview.str; player.vit += statPreview.vit; player.agi += statPreview.agi; player.hp = getMaxHP(); statPreview = { str: 0, vit: 0, agi: 0 }; log("✔ 屬性已固化。", "var(--quest)"); checkSkillUnlocks(); updateUI(); }
 
 function switchView(v) {
+    if(player.workStartTime && v === 'battle') return openModal("正在工作中", "妳還在居酒屋幫忙，不能翹班去打怪！", "我知道了");
     if(isResting) return openModal("歇息中", "正在旅籠屋休息...", "等候");
-    if(monster.isBoss) {
-        if(v !== 'battle') return openModal("鎖定中", "首領戰鬥中，請先結束戰鬥。", "繼續戰鬥");
-    }
+    if(monster.isBoss) if(v !== 'battle') return openModal("鎖定中", "首領戰鬥中，請先結束戰鬥。", "繼續戰鬥");
     currentView = v; 
     let vBat = el('view-battle'); if(vBat) vBat.classList.toggle('hidden', v !== 'battle'); 
     let vVil = el('view-village'); if(vVil) vVil.classList.toggle('hidden', v !== 'village');
@@ -1009,535 +1157,327 @@ function switchView(v) {
     let tVil = el('t-village'); if(tVil) tVil.classList.toggle('active', v === 'village');
     
     let qb = el('btn-quick-battle');
-    if(v === 'battle') { 
-        isPaused = false; startBattleLoop(); 
-        if(qb) qb.classList.add('hidden');
-    } else { 
-        isPaused = true; 
-        if(qb) qb.classList.remove('hidden');
-        backToVillage(); 
+    if(v === 'battle') { isPaused = false; startBattleLoop(); if(qb) qb.classList.add('hidden');
+    } else { isPaused = true; if(qb) qb.classList.remove('hidden'); backToVillage(); }
+}
+
+function startWork() {
+    player.workStartTime = Date.now();
+    isPaused = true; 
+    log("🏃 換上圍裙，開始在居酒屋幫忙...", "var(--gold)");
+    showSubView('work');
+}
+
+function stopWork() {
+    let now = Date.now();
+    let hourlyRate = 1200 + (player.lvl * 100);
+    
+    // 結算夥伴加成 (資料驅動)
+    if (player.helper && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].workBonus) {
+        hourlyRate *= HELPER_DB[player.helper.id].workBonus.rate;
     }
+
+    let elapsedSecs = Math.floor((now - player.workStartTime) / 1000);
+    let earn = Math.floor((elapsedSecs / 3600) * hourlyRate);
+    
+    if (earn > 0) {
+        player.gold += earn;
+        log(`💰 老闆：「辛苦啦！這是你的工錢。」獲得了 $${earn}。`, "var(--gold)");
+    } else {
+        log("💨 工作時間太短，老闆揮揮手叫你趕快走。", "#888");
+    }
+    
+    player.workStartTime = null;
+    isPaused = false;
+    updateUI();
+    showSubView('izakaya'); 
 }
 
 function showSubView(s) {
     if(isResting) return; 
     let vMenu = el('village-menu'); if(vMenu) vMenu.classList.add('hidden'); 
     let sView = el('sub-view'); if(sView) sView.classList.remove('hidden');
-    const c = el('sub-content'); if(!c) return;
-    c.innerHTML = "";
+    const c = el('sub-content'); if(!c) return; c.innerHTML = "";
     
     if(s==='inn') {
         let cost = player.lvl <= 10 ? 0 : Math.min(50, player.lvl * 2);
-        c.innerHTML = `<h3>🛌 旅籠屋</h3><p style="font-size:0.9em; color:#aaa;">Lv.10 以內免費，最高收費 50 金幣。</p>
-        <div style="background:#111; padding:15px; border-radius:8px; border:1px solid #333; margin: 15px 0;">
-            <p style="margin:5px 0;">目前體力：<span style="color: ${player.hp < getMaxHP() ? 'var(--danger)' : 'var(--quest)'}; font-weight:bold;">${Math.floor(player.hp)}</span> / ${getMaxHP()}</p>
-            <p style="margin:5px 0;">持有金幣：<span style="color:var(--gold);">${player.gold}</span></p>
-        </div>
-        <p>休息費用：${cost === 0 ? '<span style="color:var(--quest)">免費</span>' : cost + ' 金幣'}</p>
-        <button class="btn-action" style="width:100%;" id="btn-inn-rest" onclick="innRest(${cost})">入內休息 (5秒)</button>`;
+        c.innerHTML = `<h3>🛌 旅籠屋</h3><p style="font-size:0.9em; color:#aaa;">Lv.10 以內免費，最高收費 50 金幣。</p><div style="background:#111; padding:15px; border-radius:8px; border:1px solid #333; margin: 15px 0;"><p style="margin:5px 0;">目前體力：<span style="color: ${player.hp < getMaxHP() ? 'var(--danger)' : 'var(--quest)'}; font-weight:bold;">${Math.floor(player.hp)}</span> / ${getMaxHP()}</p><p style="margin:5px 0;">持有金幣：<span style="color:var(--gold);">${player.gold}</span></p></div><p>休息費用：${cost === 0 ? '<span style="color:var(--quest)">免費</span>' : cost + ' 金幣'}</p><button class="btn-action" style="width:100%;" id="btn-inn-rest" onclick="innRest(${cost})">入內休息 (5秒)</button>`;
     } 
-    else if(s==='smith') {
-        renderSmithy();
-    } 
+    else if(s==='smith') { renderSmithy(); } 
+    else if(s==='smith_sell') { renderSmithySell(); }
+    else if(s==='izakaya') {
+        // 取得目前夥伴名稱（如有）
+        let helperName = (player.helper && HELPER_DB[player.helper.id]) ? HELPER_DB[player.helper.id].name : "尚未結契";
+        
+        c.innerHTML = `
+            <h3>🏮 居酒屋「宵月」</h3>
+            <p style="color:#ffb7c5; font-style:italic; margin-bottom:20px;">
+                老闆娘：「哎呀，又是你呀？今晚想喝點什麼，還是想找幾個可靠的伴出發呢？」
+            </p>
+            
+            <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; display:flex; justify-content:space-between; font-size:0.9em; border:1px solid #333;">
+                <span>💰 持有金幣：<b style="color:var(--gold);">${player.gold.toLocaleString()}</b></span>
+                <span>⛩️ 目前夥伴：<b style="color:#fdcb6e;">${helperName}</b></span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="slot-card" style="width:auto; margin:0; border-color:#fdcb6e;" onclick="showSubView('helper_shop')">
+                    <h3 style="color:#fdcb6e; margin:5px 0;">🤝 夥伴結契</h3>
+                    <p style="margin:0; font-size:0.8em; color:#aaa;">尋找共戰的隊友</p>
+                </div>
+                
+                <div class="slot-card" style="width:auto; margin:0; border-color:var(--gold);" onclick="showSubView('work')">
+                    <h3 style="color:var(--gold); margin:5px 0;">🧹 居酒屋打工</h3>
+                    <p style="margin:0; font-size:0.8em; color:#aaa;">勞動換取修行金</p>
+                </div>
+
+                <div class="slot-card" style="width:auto; margin:0; border-color:#888; opacity:0.6; cursor:not-allowed;">
+                    <h3 style="color:#888; margin:5px 0;">📜 傳聞打探</h3>
+                    <p style="margin:0; font-size:0.8em; color:#666;">(後續開放內容)</p>
+                </div>
+            </div>
+        `;
+    }
+    else if(s==='helper_shop') {
+        renderIzakaya('helper'); 
+    }
+    else if(s==='work') {
+        let now = Date.now();
+        let baseRate = 1200 + (player.lvl * 100);
+        let finalRate = baseRate;
+        let bonusTxt = "";
+        
+        // 夥伴加成計算 (動態讀取)
+        if (player.helper && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].workBonus) {
+            let bonus = HELPER_DB[player.helper.id].workBonus;
+            finalRate = Math.floor(baseRate * bonus.rate);
+            if (bonus.rate > 1.0) bonusTxt = `<br><small style='color:var(--quest);'>✨ 夥伴加成：${bonus.label}</small>`;
+        }
+
+        c.innerHTML = `<h3>🧹 居酒屋勤務</h3><p style="color:#aaa;">目前的時薪為 $${finalRate}${bonusTxt}</p>`;
+        
+        if (!player.workStartTime) {
+            c.innerHTML += `
+                <div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:8px; border:1px solid #444; margin-top:15px;">
+                    <p>老闆：「現在剛好缺人手，要來幫忙嗎？」</p>
+                    <button class="btn-action" style="width:100%; background:var(--gold); color:black;" onclick="startWork()">開始幫忙</button>
+                </div>
+                <button class="btn-action" style="width:100%; margin-top:15px; background:#444; color:white;" onclick="showSubView('izakaya')">返回居酒屋</button>
+            `;
+        } else {
+            let elapsedSecs = Math.floor((now - player.workStartTime) / 1000);
+            let earn = Math.floor((elapsedSecs / 3600) * finalRate);
+            c.innerHTML += `
+                <div style="background:rgba(255,184,0,0.1); padding:20px; border-radius:8px; border:1px solid var(--gold); margin-top:15px;">
+                    <p style="color:var(--gold);">🍺 努力工作中...</p>
+                    <p>已持續: ${Math.floor(elapsedSecs/60)} 分鐘</p>
+                    <p>累積工錢：<span style="font-size:1.4em; font-weight:bold;">$${earn}</span></p>
+                    <button class="btn-action" style="width:100%; background:var(--danger); color:white; margin-top:10px;" onclick="stopWork()">領工錢並收工</button>
+                </div>
+                <p style="font-size:0.8em; color:#666; margin-top:15px;">※ 打工期間無法離開居酒屋或參與戰鬥。</p>
+            `;
+        }
+    }
     else if(s==='gm') {
-        c.innerHTML = `<h3>🛠️ GM 控制台</h3>
+        c.innerHTML = `<h3>🛠️ 神明特權</h3>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px; text-align:left; font-size:0.9em; color:white;">
-            <div>等級: <input type="number" id="gm-lvl" value="${player.lvl}" style="width:60px;"></div>
-            <div>金幣: <input type="number" id="gm-gold" value="${player.gold}" style="width:60px;"></div>
-            <div>力量: <input type="number" id="gm-str" value="${player.str}" style="width:60px;"></div>
-            <div>體質: <input type="number" id="gm-vit" value="${player.vit}" style="width:60px;"></div>
-            <div>敏捷: <input type="number" id="gm-agi" value="${player.agi}" style="width:60px;"></div>
-            <div>點數: <input type="number" id="gm-pts" value="${player.statPoints}" style="width:60px;"></div>
+            <div>等級: <input type="number" id="gm-lvl" value="${player.lvl}" style="width:60px;"></div><div>金幣: <input type="number" id="gm-gold" value="${player.gold}" style="width:60px;"></div>
+            <div>力量: <input type="number" id="gm-str" value="${player.str}" style="width:60px;"></div><div>體質: <input type="number" id="gm-vit" value="${player.vit}" style="width:60px;"></div>
+            <div>敏捷: <input type="number" id="gm-agi" value="${player.agi}" style="width:60px;"></div><div>點數: <input type="number" id="gm-pts" value="${player.statPoints}" style="width:60px;"></div>
         </div>
         <button class="btn-action" style="width:100%; margin-bottom:10px; background:var(--gm);" onclick="applyGM()">✅ 套用數值</button>
         <button class="btn-action" style="width:100%; margin-bottom:15px; background:var(--gm);" onclick="player.maxMapIdx=maps.length-1; updateMapSelector(); updateUI(); openModal('解鎖成功', '已開啟所有荒野地圖！', '太棒了');">🗺️ 解鎖全部地圖</button>
         <button class="btn-action" style="width:100%; margin-bottom:15px; background:var(--mat);" onclick="for(let k in player.mats) player.mats[k]+=100; log('GM: 獲得大量素材'); updateUI(); openModal('作弊成功','已獲得所有素材各 100 個！','好耶');">🎁 +100 全素材</button>`;
     } 
-    else if(s==='save') {
-        c.innerHTML = `<h3>💾 紀錄點</h3>
-        <button class="btn-action" style="width:100%; margin-bottom:15px;" id="btn-save-game" onclick="saveGameWithFeedback()">手動存檔</button>
-        <button class="btn-action" style="width:100%; margin-bottom:15px; background:var(--accent);" onclick="generateImportCode()">📤 生成引繼碼 (自動複製)</button>
-        <button class="btn-action" style="width:100%; background:#e67e22;" onclick="promptImportCode()">📥 輸入引繼碼 (覆蓋此紀錄)</button>`;
-    } 
+    else if(s==='save') { c.innerHTML = `<h3>💾 紀錄點</h3><button class="btn-action" style="width:100%; margin-bottom:15px;" id="btn-save-game" onclick="saveGameWithFeedback()">手動存檔</button><button class="btn-action" style="width:100%; margin-bottom:15px; background:var(--accent);" onclick="generateImportCode()">📤 生成引繼碼 (自動複製)</button><button class="btn-action" style="width:100%; background:#e67e22;" onclick="promptImportCode()">📥 輸入引繼碼 (覆蓋此紀錄)</button>`; } 
     else if(s==='shop') {
-        // 🎯 透過 ITEM_DB 動態生成恢復藥水選單 (加入 tag)
-        let recOpts = "";
-        Object.values(ITEM_DB).filter(i => i.cat === 'rec').forEach(item => {
-            let label = item.tag ? `(${item.tag})` : "";
-            recOpts += `<option value="${item.id}">${item.name}${label} - $${item.cost}</option>`;
-        });
-        
-        let recHtml = `
-        <div style="background:#111; padding:12px; border-radius:8px; margin-bottom:12px; border-left:4px solid var(--quest);">
-            <h4 style="margin:0 0 8px 0; color:white;">🧪 恢復藥水</h4>
-            <div style="display:flex; gap:10px; margin-bottom:8px;">
-                <select id="shop-rec-sel" style="flex:2;">${recOpts}</select>
-                <input type="number" id="shop-rec-cnt" value="1" min="1" style="flex:1;">
-            </div>
-            <button class="btn-action" style="width:100%; background:var(--quest); color:black;" onclick="buyShopItem('recovery')">購買</button>
-        </div>`;
-
-        // 🎯 透過 ITEM_DB 動態生成強化藥水選單 (加入 tag)
-        let buffOpts = "";
-        Object.values(ITEM_DB).filter(i => i.cat === 'buff').forEach(item => {
-            let label = item.tag ? `(${item.tag})` : "";
-            buffOpts += `<option value="${item.id}">${item.name}${label} - $${item.cost}</option>`;
-        });
-        
-        let buffHtml = `
-        <div style="background:#111; padding:12px; border-radius:8px; margin-bottom:12px; border-left:4px solid var(--mat); opacity:0.6;">
-            <h4 style="margin:0 0 8px 0; color:white;">💪 強化道具</h4>
-            <div style="display:flex; gap:10px; margin-bottom:8px;">
-                <select id="shop-buff-sel" disabled style="flex:2; background:#222; color:#888;">${buffOpts}</select>
-                <input type="number" id="shop-buff-cnt" disabled value="1" style="flex:1; background:#222;">
-            </div>
-            <button class="btn-action" disabled style="width:100%; background:#444; color:#888;">進貨中</button>
-        </div>`;
-
-        // 🎯 透過 ITEM_DB 動態生成其他道具選單 (加入 tag)
-        let otherOpts = "";
-        Object.values(ITEM_DB).filter(i => i.cat === 'oth').forEach(item => {
-            let label = item.tag ? `(${item.tag})` : "";
-            otherOpts += `<option value="${item.id}">${item.name}${label} - $${item.cost}</option>`;
-        });
-
-        let otherHtml = `
-        <div style="background:#111; padding:12px; border-radius:8px; margin-bottom:12px; border-left:4px solid var(--cherry);">
-            <h4 style="margin:0 0 8px 0; color:white;">🎒 特殊道具</h4>
-            <div style="display:flex; gap:10px; margin-bottom:8px;">
-                <select id="shop-oth-sel" style="flex:2;" onchange="let cnt=document.getElementById('shop-oth-cnt'); if(this.value==='wash_stats'){cnt.value=1; cnt.disabled=true;}else{cnt.disabled=false;}">${otherOpts}</select>
-                <input type="number" id="shop-oth-cnt" value="1" min="1" style="flex:1;">
-            </div>
-            <button class="btn-action" style="width:100%; background:var(--cherry); color:black;" onclick="buyShopItem('other')">購買</button>
-        </div>`;
-
-        // 組合內容
-        c.innerHTML = `<h3>🏮 萬屋</h3>
-        <p style="margin-top:0;">持有金幣：<span style="color:var(--gold); font-size:1.2em; font-weight:bold;">${player.gold.toLocaleString()}</span></p>
-        <div id="shop-inventory-display" style="background:#1a1a2e; padding:10px; border-radius:8px; margin-bottom:15px; font-size:0.85em; color:#aaa; border:1px solid #333;"></div>
-        
-        ${recHtml}
-        ${buffHtml}
-        ${otherHtml}`;
-        
+        const getShopOpts = (tabId) => { let opts = ""; Object.values(ITEM_DB).filter(i => i.shopAvailable && i.shopTab === tabId).forEach(item => { let label = item.tag ? `(${item.tag})` : ""; opts += `<option value="${item.id}">${item.name}${label} - $${item.cost}</option>`; }); return opts; };
+        let recOpts = getShopOpts('rec'); let buffOpts = getShopOpts('buff'); let othOpts = getShopOpts('oth');
+        let recHtml = recOpts ? `<div style="background:#111; padding:12px; border-radius:8px; margin-bottom:12px; border-left:4px solid var(--quest);"><h4 style="margin:0 0 8px 0; color:white;">🧪 恢復藥水</h4><div style="display:flex; gap:10px; margin-bottom:8px;"><select id="shop-rec-sel" style="flex:2;">${recOpts}</select><input type="number" id="shop-rec-cnt" value="1" min="1" style="flex:1;"></div><button class="btn-action" style="width:100%; background:var(--quest); color:black;" onclick="buyShopItem('rec')">購買</button></div>` : '';
+        let buffHtml = buffOpts ? `<div style="background:#111; padding:12px; border-radius:8px; margin-bottom:12px; border-left:4px solid var(--mat);"><h4 style="margin:0 0 8px 0; color:white;">💪 強化道具</h4><div style="display:flex; gap:10px; margin-bottom:8px;"><select id="shop-buff-sel" style="flex:2;">${buffOpts}</select><input type="number" id="shop-buff-cnt" value="1" min="1" style="flex:1;"></div><button class="btn-action" style="width:100%; background:var(--mat); color:black;" onclick="buyShopItem('buff')">購買</button></div>` : '';
+        let othHtml = othOpts ? `<div style="background:#111; padding:12px; border-radius:8px; margin-bottom:12px; border-left:4px solid var(--cherry);"><h4 style="margin:0 0 8px 0; color:white;">🎒 特殊道具</h4><div style="display:flex; gap:10px; margin-bottom:8px;"><select id="shop-oth-sel" style="flex:2;" onchange="let cnt=document.getElementById('shop-oth-cnt'); if(this.value==='wash_stats'){cnt.value=1; cnt.disabled=true;}else{cnt.disabled=false;}">${othOpts}</select><input type="number" id="shop-oth-cnt" value="1" min="1" style="flex:1;"></div><button class="btn-action" style="width:100%; background:var(--cherry); color:black;" onclick="buyShopItem('oth')">購買</button></div>` : '';
+        c.innerHTML = `<h3>🏮 萬屋</h3><p style="margin-top:0;">持有金幣：<span style="color:var(--gold); font-size:1.2em; font-weight:bold;">${player.gold.toLocaleString()}</span></p><div id="shop-inventory-display" style="background:#1a1a2e; padding:10px; border-radius:8px; margin-bottom:15px; font-size:0.85em; color:#aaa; border:1px solid #333;"></div>${recHtml}${buffHtml}${othHtml}`;
         updateShopInvDisplay();
-    } 
-    else if(s==='path') {
-        renderPath();
     }
 }
 
-function buyShopItem(type) {
-    let unitCost = 0;
-    let count = 1;
-    let itemName = "";
-    let onBuySuccess = null;
+function renderIzakaya(tab = 'helper') {
+    const c = el('sub-content'); if(!c) return; 
+    
+    let contentHtml = "";
+    Object.values(HELPER_DB).forEach(h => {
+        let isHired = player.helper && player.helper.id === h.id;
+        let canAfford = player.gold >= h.cost;
+        let bonusLabel = h.workBonus.rate > 1.0 ? `<span style="color:var(--gold); font-size:0.8em;">[${h.workBonus.label}]</span>` : "";
 
-    if (type === 'recovery') {
-        let pid = el('shop-rec-sel').value;
-        count = parseInt(el('shop-rec-cnt').value);
-        if (isNaN(count) || count < 1) count = 1;
-        let item = getItem(pid);
-        unitCost = item.cost;
-        itemName = item.name;
-        onBuySuccess = (buyCount) => { player.potions[pid] += buyCount; };
-    } 
-    else if (type === 'other') {
-        let itemId = el('shop-oth-sel').value;
-        let item = getItem(itemId);
+        contentHtml += `
+            <div class="item-row" style="border-left-color:#fdcb6e; padding:15px;">
+                <div style="flex:1;">
+                    <b style="color:#fdcb6e;">${h.name}</b> ${bonusLabel}<br>
+                    <small style="color:#aaa; display:block; margin:5px 0;">${h.desc}</small>
+                    <small style="color:var(--cherry);">契約長度：${h.duration} 場戰鬥</small>
+                </div>
+                <button class="btn-action" 
+                        style="background:${canAfford ? 'var(--quest)' : '#444'}; color:${canAfford ? 'black' : '#888'};" 
+                        onclick="hireHelper('${h.id}')">
+                    ${isHired ? '續約' : '簽約'}<br><small>$${h.cost}</small>
+                </button>
+            </div>`;
+    });
+
+    c.innerHTML = `
+        <h3>🤝 夥伴結契</h3>
+        <p style="color:#aaa; font-size:0.9em; margin-bottom:15px;">老闆娘：「這些都是里中有名的好手，只要錢給到位，他們很樂意出份力。」</p>
+        ${contentHtml}
+        <button class="btn-action" style="width:100%; margin-top:15px; background:#444; color:white;" onclick="showSubView('izakaya')">返回居酒屋</button>
+    `;
+}
+
+
+function hireHelper(id) { 
+    let h = HELPER_DB[id]; 
+    if(player.gold >= h.cost) { 
+        player.gold -= h.cost; 
         
-        if (itemId === 'wash_stats') {
-            buyFullStatReset(item.cost); 
-            return; 
-        } 
-        else if (itemId === 'revive') {
-            count = parseInt(el('shop-oth-cnt').value);
-            if (isNaN(count) || count < 1) count = 1;
-            unitCost = item.cost;
-            itemName = item.name;
-            onBuySuccess = (buyCount) => { player.revives += buyCount; };
-        }
-    }
-
-    let totalCost = unitCost * count;
-    let maxAffordable = Math.floor(player.gold / unitCost);
-
-    if (player.gold >= totalCost) {
-        player.gold -= totalCost;
-        onBuySuccess(count);
-        updateUI(); updateShopInvDisplay();
-        log(`🛍️ 購買成功！獲得 ${itemName} x${count}`, "var(--quest)");
-        openModal("交易完成", `萬屋老闆點了點頭。<br><br>獲得：<span style="color:var(--quest); font-weight:bold;">${itemName} x${count}</span>`, "確認");
-    } 
-    else {
-        if (maxAffordable > 0 && type === 'recovery') {
-            openModal("金幣不足", `妳的金幣最多只能購買 <b>${maxAffordable}</b> 個。<br>確定要將剩下的錢全部買入嗎？`, "確定購買", () => {
-                player.gold -= (unitCost * maxAffordable);
-                onBuySuccess(maxAffordable);
-                updateUI(); updateShopInvDisplay(); showSubView('shop');
-                log(`🛍️ 購買成功！獲得 ${itemName} x${maxAffordable}`, "var(--quest)");
-                openModal("交易完成", `萬屋老闆笑著收下所有零錢。<br><br>獲得：<span style="color:var(--quest); font-weight:bold;">${itemName} x${maxAffordable}</span>`, "確認");
-            }, true);
+        if (player.helper && player.helper.id === id) {
+            player.helper.left += h.duration;
+            log(`🍶 續約成功！${h.name} 的合約場次增加了 ${h.duration} 場。`, "#fdcb6e"); 
         } else {
-            openModal("金幣不足", "萬屋老闆：錢不夠喔，去多打點怪吧！", "知道了");
+            player.helper = { id: id, left: h.duration }; 
+            log(`🍶 成功與 ${h.name} 簽訂了結契！`, "#fdcb6e"); 
         }
+        
+        updateUI(); 
+        renderIzakaya('helper'); 
+    } else { 
+        openModal("金幣不足", "老闆娘：錢不夠啊，小哥。去外面多打點怪吧！", "抱歉"); 
+    } 
+}
+
+function buyShopItem(tab) {
+    let selId = `shop-${tab}-sel`; let cntId = `shop-${tab}-cnt`; let itemId = el(selId).value; let count = parseInt(el(cntId).value); if (isNaN(count) || count < 1) count = 1; let item = getItem(itemId); let unitCost = item.cost;
+    if (itemId === 'wash_stats') { buyFullStatReset(unitCost); return; } 
+    let totalCost = unitCost * count; let maxAffordable = Math.floor(player.gold / unitCost);
+    let onBuySuccess = (buyCount) => { if(item.cat === 'rec') { if(!player.potions[itemId]) player.potions[itemId]=0; player.potions[itemId] += buyCount; } else if (item.id === 'revive') { player.revives += buyCount; } else { log("尚未實裝該類道具存入邏輯。"); } };
+    if (player.gold >= totalCost) { player.gold -= totalCost; onBuySuccess(count); updateUI(); updateShopInvDisplay(); log(`🛍️ 購買成功！獲得 ${item.name} x${count}`, "var(--quest)"); openModal("交易完成", `萬屋老闆點了點頭。<br><br>獲得：<span style="color:var(--quest); font-weight:bold;">${item.name} x${count}</span>`, "確認");
+    } else {
+        if (maxAffordable > 0 && tab === 'rec') { openModal("金幣不足", `妳的金幣最多只能購買 <b>${maxAffordable}</b> 個。<br>確定要將剩下的錢全部買入嗎？`, "確定購買", () => { player.gold -= (unitCost * maxAffordable); onBuySuccess(maxAffordable); updateUI(); updateShopInvDisplay(); showSubView('shop'); log(`🛍️ 購買成功！獲得 ${item.name} x${maxAffordable}`, "var(--quest)"); openModal("交易完成", `萬屋老闆笑著收下所有零錢。<br><br>獲得：<span style="color:var(--quest); font-weight:bold;">${item.name} x${maxAffordable}</span>`, "確認"); }, true);
+        } else openModal("金幣不足", "萬屋老闆：錢不夠喔，去多打點怪吧！", "知道了");
     }
 }
 
 function buyFullStatReset(cost) {
-    if (player.gold < cost) {
-        return openModal("金幣不足", `萬屋老闆：需要 ${cost} 金幣才能購買忘卻之水喔。`, "知道了");
-    }
-    
-    let addedStr = player.str - player.lockedStats.str;
-    let addedVit = player.vit - player.lockedStats.vit;
-    let addedAgi = player.agi - player.lockedStats.agi;
-    let totalAdded = addedStr + addedVit + addedAgi;
-    
-    if (totalAdded <= 0) {
-        return openModal("無法洗鍊", "您目前沒有任何可退回的屬性點數。", "知道了");
-    }
-    
-    player.gold -= cost;
-    player.str = player.lockedStats.str;
-    player.vit = player.lockedStats.vit;
-    player.agi = player.lockedStats.agi;
-    player.statPoints += totalAdded;
-    player.hp = Math.min(player.hp, getMaxHP()); 
-    
-    log(`🌀 飲下忘卻之水，屬性已重置，成功退回了 ${totalAdded} 點！`, "var(--quest)");
-    updateUI();
-    showSubView('shop');
-    openModal("洗鍊成功", `妳飲下了忘卻之水，靈魂的枷鎖被解開了。<br><br>成功退回了 <span style="color:var(--gold); font-weight:bold; font-size:1.5em;">${totalAdded}</span> 點自由屬性。`, "太好了");
+    if (player.gold < cost) return openModal("金幣不足", `萬屋老闆：需要 ${cost} 金幣才能購買忘卻之水喔。`, "知道了");
+    let totalAdded = (player.str - player.lockedStats.str) + (player.vit - player.lockedStats.vit) + (player.agi - player.lockedStats.agi);
+    if (totalAdded <= 0) return openModal("無法洗鍊", "您目前沒有任何可退回的屬性點數。", "知道了");
+    player.gold -= cost; player.str = player.lockedStats.str; player.vit = player.lockedStats.vit; player.agi = player.lockedStats.agi; player.statPoints += totalAdded; player.hp = Math.min(player.hp, getMaxHP()); 
+    log(`🌀 飲下忘卻之水，屬性已重置，成功退回了 ${totalAdded} 點！`, "var(--quest)"); updateUI(); showSubView('shop'); openModal("洗鍊成功", `妳飲下了忘卻之水，靈魂的枷鎖被解開了。<br><br>成功退回了 <span style="color:var(--gold); font-weight:bold; font-size:1.5em;">${totalAdded}</span> 點自由屬性。`, "太好了");
 }
 
-function renderPath() {
-    const c = el('sub-content');
-    if(!c) return;
-    
-    let html = `<h3>📜 秘技捲軸</h3><p style="font-size:0.85em; color:#aaa;">設定主動技能的施放戰術。</p>`;
-    
-    html += `<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin-bottom:15px;">`;
-    for(let i=0; i<4; i++) {
-        let sid = player.equippedSkills[i];
-        if(sid && skillDB[sid]) {
-            let sk = skillDB[sid];
-            let isAct = sk.type === 'active';
-            
-            let tacticHtml = "";
-            if (isAct) {
-                tacticHtml = `<div style="margin-top:5px; border-top:1px solid #444; padding-top:5px;">
-                    <select style="width:100%; font-size:0.75em; background:#000; color:white; border:1px solid #666;" onchange="updateGambit(${i}, this.value)">
-                        <option value="0" ${player.skillGambits[i]==0?'selected':''}>始終施放</option>
-                        <option value="3" ${player.skillGambits[i]==3?'selected':''}>僅對首領</option>
-                        <option value="4" ${player.skillGambits[i]==4?'selected':''}>我方 HP</option>
-                        <option value="5" ${player.skillGambits[i]==5?'selected':''}>敵方 HP</option>
-                    </select>`;
-                
-                if(player.skillGambits[i] >= 4) {
-                    tacticHtml += `<div style="display:flex; align-items:center; justify-content:center; gap:4px; margin-top:3px;">
-                        <span style="cursor:pointer; font-size:1em; width:20px; background:#333; color:var(--gold); border-radius:3px; display:inline-block; user-select:none;" 
-                              onclick="toggleGambitOp(${i})">
-                            ${player.skillGambitOps[i] === '<' ? '&lt;' : '&gt;'}
-                        </span>
-                        <input type="number" value="${player.skillGambitValues[i]}" 
-                               style="width:38px; font-size:0.75em; background:#000; color:white; border:1px solid #555;" 
-                               onchange="updateGambitVal(${i}, this.value)">
-                        <span style="font-size:0.7em;">%</span>
-                    </div>`;
-                }
-                tacticHtml += `</div>`;
-            }
-
-            html += `<div style="background:#222; border:1px solid ${isAct?'var(--skill)':'var(--passive)'}; border-radius:5px; padding:8px 4px; text-align:center; font-size:0.8em;">
-                <div onclick="unequipSkill(${i})" style="cursor:pointer;"><b>${sk.name}</b><br><small style="color:#666;">(解除)</small></div>
-                ${tacticHtml}
-            </div>`;
-        } else {
-            html += `<div style="background:#111; border:1px dashed #555; border-radius:5px; padding:10px 5px; text-align:center; font-size:0.8em; color:#666;">空</div>`;
-        }
-    }
-    
-    html += `</div><p style="font-size:0.9em; color:var(--gold);">已領悟的秘技：</p><div style="display:flex; flex-direction:column; gap:8px; text-align:left; height:200px; overflow-y:auto;">`;
-    
-    if(!player.unlockedSkills || player.unlockedSkills.length === 0) {
-        html += `<div style="color:#666; text-align:center;">尚無領悟...</div>`;
-    } else {
-        player.unlockedSkills.forEach(sid => {
-            let sk = skillDB[sid];
-            let isEq = player.equippedSkills.includes(sid);
-            html += `<div style="background:#1a1a2e; padding:10px; border-left:4px solid ${sk.type==='active'?'var(--skill)':'var(--passive)'}; border-radius:4px; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                <div><b style="color:${sk.color};">${sk.name}</b><br><small style="color:#ddd;">${sk.desc}</small></div>
-                <button class="btn-action" style="padding:4px 10px; font-size:0.8em; background:${isEq?'#444':'var(--quest)'}; color:${isEq?'#888':'black'};" ${isEq?'disabled':''} onclick="equipSkill('${sid}')">${isEq?'已裝備':'裝備'}</button>
-            </div>`;
-        });
-    }
-    c.innerHTML = html + `</div>`;
-}
-
-function updateGambit(slotIdx, val) { player.skillGambits[slotIdx] = parseInt(val); renderPath(); updateUI(); saveGame(false); }
-function updateGambitVal(idx, val) { let n = parseInt(val); if(isNaN(n)) n = 0; player.skillGambitValues[idx] = Math.max(0, Math.min(100, n)); saveGame(false); }
-function updateGambitOp(idx, op) { player.skillGambitOps[idx] = op; saveGame(false); }
-function toggleGambitOp(idx) { player.skillGambitOps[idx] = (player.skillGambitOps[idx] === '<') ? '>' : '<'; renderPath(); saveGame(false); }
-
-function equipSkill(sid) {
-    let emptyIdx = player.equippedSkills.indexOf(null);
-    if(emptyIdx !== -1) { 
-        player.equippedSkills[emptyIdx] = sid; 
-        if (!player.skillGambits) player.skillGambits = [0, 0, 0, 0];
-        if (!player.skillGambitValues) player.skillGambitValues = [50, 50, 50, 50];
-        if (!player.skillGambitOps) player.skillGambitOps = ['<', '<', '<', '<'];
-        player.skillGambits[emptyIdx] = 0;
-        player.skillGambitValues[emptyIdx] = 50; 
-        player.skillGambitOps[emptyIdx] = '<';
-        renderPath(); updateUI(); log(`📜 已裝備秘技：${skillDB[sid].name}`, "var(--quest)"); saveGame(false);
-    } else {
-        openModal("槽位已滿", "請先點擊上方已裝備的秘技來解除裝備。", "知道了");
-    }
-}
-
-function unequipSkill(idx) { 
-    player.equippedSkills[idx] = null; player.skillGambits[idx] = 0; combatState.skillCds[idx] = 0; 
-    renderPath(); updateUI(); log("📜 已解除秘技裝備。", "#aaa"); saveGame(false);
-}
-
-function applyGM() {
-    player.lvl = parseInt(el('gm-lvl').value) || 1;
-    player.gold = parseInt(el('gm-gold').value) || 0;
-    player.str = parseInt(el('gm-str').value) || 2;
-    player.vit = parseInt(el('gm-vit').value) || 1;
-    player.agi = parseInt(el('gm-agi').value) || 0;
-    player.statPoints = parseInt(el('gm-pts').value) || 0;
-    player.hp = getMaxHP();
-    checkSkillUnlocks(); updateUI(); showSubView('gm'); log('🛠️ GM 數值已套用！', 'var(--gm)');
-}
-
-function getUpgradeCost(level) {
-    let tier = Math.floor(level / 3) + 1; tier = Math.min(4, tier); 
-    let matKey = `m${tier}`;
-    let goldCost = 50 + (level * 100); let ironCost = 5 + (level * 2); let specialCost = 1 + (level % 3);
-    return { matKey, goldCost, ironCost, specialCost };
-}
+function applyGM() { player.lvl = parseInt(el('gm-lvl').value) || 1; player.gold = parseInt(el('gm-gold').value) || 0; player.str = parseInt(el('gm-str').value) || 2; player.vit = parseInt(el('gm-vit').value) || 1; player.agi = parseInt(el('gm-agi').value) || 0; player.statPoints = parseInt(el('gm-pts').value) || 0; player.hp = getMaxHP(); updateUI(); checkSkillUnlocks(); showSubView('gm'); log('🛠️ 神明特權：各項數值已重新校準。', 'var(--gm)'); }
+function getUpgradeCost(level) { let tier = Math.floor(level / 3) + 1; tier = Math.min(4, tier); let matKey = `m${tier}`; let goldCost = 50 + (level * 100); let ironCost = 5 + (level * 2); let specialCost = 1 + (level % 3); return { matKey, goldCost, ironCost, specialCost }; }
 
 function renderSmithy() {
-    const c = el('sub-content');
-    if(!c) return;
-
-    let baseAtk = Math.floor(player.str * 1.5);
-    let gearAtk = (player.gear.arms || 0) * 3;
-    let totalDef = parseFloat(getDefPercent(player.vit));
-    let gearDef = (player.gear.body || 0) * 1.5;
-    let baseDef = (totalDef - gearDef).toFixed(1);
-    let totalEva = parseFloat(getEvaPercent(player.agi));
-    let gearEva = (player.gear.legs || 0) * 1.0;
-    let baseEva = (totalEva - gearEva).toFixed(1);
-
-    let statusPanel = `
-    <div style="background:rgba(0,0,0,0.5); padding:12px; border-radius:10px; border:1px solid #444; margin-bottom:15px; font-size:0.85em; line-height:1.6;">
-        <h4 style="margin:0 0 8px 0; color:var(--gold); text-align:center;">✨ 目前靈脈總成</h4>
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; text-align:center;">
-            <div>
-                <span style="color:#aaa;">攻擊威力</span><br>
-                <b style="color:white;">${baseAtk + gearAtk}</b><br>
-                <small style="color:#888;">(${baseAtk} <span style="color:lime;">+${gearAtk}</span>)</small>
-            </div>
-            <div>
-                <span style="color:#aaa;">物理減傷</span><br>
-                <b style="color:white;">${totalDef}%</b><br>
-                <small style="color:#888;">(${baseDef}% <span style="color:lime;">+${gearDef}%</span>)</small>
-            </div>
-            <div>
-                <span style="color:#aaa;">閃避機率</span><br>
-                <b style="color:white;">${totalEva}%</b><br>
-                <small style="color:#888;">(${baseEva}% <span style="color:lime;">+${gearEva}%</span>)</small>
-            </div>
-        </div>
-    </div>`;
-
-    // 🎯 鍛造屋上方清單使用 ITEM_DB 查表
-    let invHtml = `<div style="text-align:left; font-size:0.85em; color:#aaa; margin-bottom:15px; padding:0 5px;">
-        <span style="color:var(--gold);">💰 金幣: ${player.gold.toLocaleString()}</span> | <span style="color:#aaa;">⚙️ ${getItem('m0').name}: ${player.mats.m0}</span><br>
-        🌿 ${getItem('m1').name}: ${player.mats.m1} | 🪵 ${getItem('m2').name}: ${player.mats.m2} | ☂️ ${getItem('m3').name}: ${player.mats.m3} | ⚡ ${getItem('m4').name}: ${player.mats.m4}
-    </div>`;
-
-    let gears = [
-        { id: 'arms', name: '臂甲', effName: '攻擊威力', unit: '', step: 3 },
-        { id: 'body', name: '胴甲', effName: '物理減傷', unit: '%', step: 1.5 },
-        { id: 'legs', name: '足具', effName: '閃避機率', unit: '%', step: 1.0 }
-    ];
-
+    const c = el('sub-content'); if(!c) return;
+    let baseAtk = getAtkVal(); let totalDef = parseFloat(getDefPercent(player.vit)); let totalEva = parseFloat(getEvaPercent(player.agi)); 
+    let gearAtk = (player.gear.arms || 0) * 3; let gearDef = (player.gear.body || 0) * 1.5; let gearEva = (player.gear.legs || 0) * 1.0; 
+    let pureAtk = baseAtk - gearAtk; let baseDef = (totalDef - gearDef).toFixed(1); let baseEva = (totalEva - gearEva).toFixed(1);
+    
+    let statusPanel = `<div style="background:rgba(0,0,0,0.5); padding:12px; border-radius:10px; border:1px solid #444; margin-bottom:15px; font-size:0.85em; line-height:1.6;"><h4 style="margin:0 0 8px 0; color:var(--gold); text-align:center;">✨ 目前靈脈總成</h4><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; text-align:center;"><div><span style="color:#aaa;">攻擊威力</span><br><b style="color:white;">${baseAtk}</b><br><small style="color:#888;">(${pureAtk} <span style="color:lime;">+${gearAtk}</span>)</small></div><div><span style="color:#aaa;">減傷</span><br><b style="color:white;">${totalDef}%</b><br><small style="color:#888;">(${baseDef}% <span style="color:lime;">+${gearDef}%</span>)</small></div><div><span style="color:#aaa;">閃避機率</span><br><b style="color:white;">${totalEva}%</b><br><small style="color:#888;">(${baseEva}% <span style="color:lime;">+${gearEva}%</span>)</small></div></div></div>`;
+    let invHtml = `<div style="text-align:left; font-size:0.85em; color:#aaa; margin-bottom:15px; padding:0 5px;"><span style="color:var(--gold);">💰 金幣: ${player.gold.toLocaleString()}</span> | <span style="color:#aaa;">⚙️ ${getItem('m0').name}: ${player.mats.m0 || 0}</span><br>🌿 ${getItem('m1').name}: ${player.mats.m1 || 0} | 🪵 ${getItem('m2').name}: ${player.mats.m2 || 0} | ☂️ ${getItem('m3').name}: ${player.mats.m3 || 0} | ⚡ ${getItem('m4').name}: ${player.mats.m4 || 0}</div>`;
+    
+    // 宗師筆記：保留您原本鍛造屋各部位的給予數值
+    let gears = [ { id: 'arms', name: '臂甲', effName: '攻擊威力', unit: '', step: 3 }, { id: 'body', name: '胴甲', effName: '減傷', unit: '%', step: 1.5 }, { id: 'legs', name: '足具', effName: '閃避機率', unit: '%', step: 1.0 } ];
+    
     let upgradeHtml = gears.map(g => {
-        let lv = player.gear[g.id] || 0;
-        let req = getUpgradeCost(lv);
-        let matName = getItem(req.matKey).name; // 🎯 查表
-        
-        let canUpgrade = (player.gold >= req.goldCost && player.mats.m0 >= req.ironCost && player.mats[req.matKey] >= req.specialCost);
-        let btnColor = canUpgrade ? 'var(--mat)' : '#444';
-        
-        let currentEff = (lv * g.step).toFixed(g.step % 1 === 0 ? 0 : 1);
-        let nextEff = ((lv + 1) * g.step).toFixed(g.step % 1 === 0 ? 0 : 1);
-        let effStr = `裝備加成: <span style="color:white;">+${currentEff}${g.unit}</span> ➔ <span style="color:lime;">+${nextEff}${g.unit}</span>`;
-
-        return `<div class="item-row" style="flex-direction:column; align-items:flex-start; margin-bottom:10px;">
-            <div style="width:100%; display:flex; justify-content:space-between; margin-bottom:4px;">
-                <b style="color:white;">${g.name} <span style="color:var(--gold);">Lv.${lv}</span></b>
-                <button class="btn-action" style="background:${btnColor}; padding:4px 10px; font-size:0.85em;" ${!canUpgrade?'disabled':''} onclick="upgradeGear('${g.id}')">靈脈強化</button>
-            </div>
-            <div style="font-size:0.8em; color:#aaa; margin-bottom:4px;">${effStr}</div>
-            <div style="font-size:0.8em; color:#888;">需求: 💰 ${req.goldCost} | ⚙️ ${getItem('m0').name} x${req.ironCost} | 🔮 ${matName} x${req.specialCost}</div>
-        </div>`;
+        let lv = player.gear[g.id] || 0; let req = getUpgradeCost(lv); let matName = getItem(req.matKey).name; 
+        let canUpgrade = (player.gold >= req.goldCost && (player.mats.m0 || 0) >= req.ironCost && (player.mats[req.matKey] || 0) >= req.specialCost); let btnColor = canUpgrade ? 'var(--mat)' : '#444';
+        let currentEff = (lv * g.step).toFixed(g.step % 1 === 0 ? 0 : 1); let nextEff = ((lv + 1) * g.step).toFixed(g.step % 1 === 0 ? 0 : 1); let effStr = `裝備加成: <span style="color:white;">+${currentEff}${g.unit}</span> ➔ <span style="color:lime;">+${nextEff}${g.unit}</span>`;
+        return `<div class="item-row" style="flex-direction:column; align-items:flex-start; margin-bottom:10px;"><div style="width:100%; display:flex; justify-content:space-between; margin-bottom:4px;"><b style="color:white;">${g.name} <span style="color:var(--gold);">Lv.${lv}</span></b><button class="btn-action" style="background:${btnColor}; padding:4px 10px; font-size:0.85em;" ${!canUpgrade?'disabled':''} onclick="upgradeGear('${g.id}')">靈脈強化</button></div><div style="font-size:0.8em; color:#aaa; margin-bottom:4px;">${effStr}</div><div style="font-size:0.8em; color:#888;">需求: 💰 ${req.goldCost} | ⚙️ ${getItem('m0').name} x${req.ironCost} | 🔮 ${matName} x${req.specialCost}</div></div>`;
     }).join("");
+    c.innerHTML = `<h3>⚒️ 虎徹的鍛冶屋</h3>${statusPanel}${invHtml}<div style="display:flex; margin-bottom:15px;"><button class="tab-btn active">靈脈強化</button><button class="tab-btn" onclick="showSubView('smith_sell')">變賣素材</button></div>${upgradeHtml}`;
+}
 
-    c.innerHTML = `<h3>⚒️ 虎徹的鍛冶屋</h3>${statusPanel}${invHtml}
+function renderSmithySell() {
+    const c = el('sub-content'); if(!c) return;
+    c.innerHTML = `<h3>⚒️ 虎徹的鍛冶屋</h3>
     <div style="display:flex; margin-bottom:15px;">
-        <button class="tab-btn active">靈脈強化</button>
-        <button class="tab-btn" onclick="renderSellMats()">變賣素材</button>
-    </div>${upgradeHtml}`;
+        <button class="tab-btn" onclick="showSubView('smith')">靈脈強化</button>
+        <button class="tab-btn active">變賣素材</button>
+    </div>
+    <div style="background:#111; padding:20px; border-radius:8px; text-align:center; color:#aaa; border:1px solid #333;">
+        <p>老闆：「要變賣多餘的素材嗎？去妳的行囊裡整理吧！」</p>
+        <button class="btn-action" style="background:var(--gold); color:black; margin-top:10px; font-size:1.05em;" 
+        onclick="backToVillage(); switchLogTab('inv'); switchView('battle');">📦 前往行囊變賣</button>
+    </div>`;
 }
 
 function upgradeGear(gid) {
     let lv = player.gear[gid]; let req = getUpgradeCost(lv);
     if(player.gold >= req.goldCost && player.mats.m0 >= req.ironCost && player.mats[req.matKey] >= req.specialCost) {
-        player.gold -= req.goldCost; player.mats.m0 -= req.ironCost; player.mats[req.matKey] -= req.specialCost;
-        player.gear[gid]++; log(`⚒️ 靈脈強化成功！${gid} 提升至 Lv.${player.gear[gid]}`, "var(--mat)");
-        updateUI(); renderSmithy(); 
+        player.gold -= req.goldCost; player.mats.m0 -= req.ironCost; player.mats[req.matKey] -= req.specialCost; player.gear[gid]++; log(`⚒️ 靈脈強化成功！${gid} 提升至 Lv.${player.gear[gid]}`, "var(--mat)"); updateUI(); renderSmithy(); 
     }
 }
 
-// 🎯 變賣素材邏輯更新 (支援自訂數量與查表)
-function renderSellMats() {
-    const c = el('sub-content'); if(!c) return;
-    let invHtml = `<div style="text-align:left; font-size:0.85em; color:#aaa; margin-bottom:15px;"><span style="color:var(--gold);">💰 目前持有金幣: ${player.gold.toLocaleString()}</span></div>`;
-    
-    let sellHtml = "";
-    for(let i=0; i<=4; i++) {
-        let k = 'm'+i; 
-        let qty = player.mats[k]; 
-        let item = getItem(k); // 🎯 查表
-        
-        sellHtml += `
-        <div class="item-row" style="flex-direction:column; align-items:stretch; gap:8px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div><span style="color:#ddd; font-weight:bold;">${item.name}</span> <small>(庫存:${qty})</small></div>
-                <div style="color:var(--gold); font-size:0.85em;">售價: $${item.val}/個</div>
-            </div>
-            <div style="display:flex; gap:8px;">
-                <input type="number" id="sell-qty-${k}" value="1" min="1" style="flex:2; height:30px;">
-                <button class="btn-action" style="padding:4px 10px; font-size:0.85em; flex:1; background:var(--accent);" ${qty<=0?'disabled':''} onclick="sellMatLogic('${k}')">變賣</button>
-                <button class="btn-action" style="padding:4px 10px; font-size:0.85em; flex:1; background:#444;" ${qty<=0?'disabled':''} onclick="document.getElementById('sell-qty-${k}').value=${qty}; sellMatLogic('${k}')">全賣</button>
-            </div>
-        </div>`;
-    }
-
-    c.innerHTML = `<h3>⚒️ 虎徹的鍛冶屋</h3>${invHtml}
-    <div style="display:flex; margin-bottom:15px;">
-        <button class="tab-btn" onclick="renderSmithy()">靈脈強化</button>
-        <button class="tab-btn active">變賣素材</button>
-    </div>${sellHtml}`;
-}
-
-function sellMatLogic(key) {
-    let inputEl = el(`sell-qty-${key}`);
-    let sellQty = parseInt(inputEl.value);
-    let myQty = player.mats[key];
-    let item = getItem(key);
-
-    if (isNaN(sellQty) || sellQty <= 0) return;
-
-    if (sellQty > myQty) {
-        openModal("數量不足", `妳身上並沒有這麼多 ${item.name}。<br>妳目前最多只能賣出 <b>${myQty}</b> 個，確定要全部賣掉嗎？`, "全部賣出", () => {
-            executeSell(key, myQty);
-        }, true);
-    } else {
-        executeSell(key, sellQty);
-    }
-}
-
-function executeSell(key, qty) {
-    if (qty <= 0) return;
-    let item = getItem(key);
-    let earn = item.val * qty;
-    player.mats[key] -= qty;
-    player.gold += earn;
-    
-    log(`💰 變賣 ${item.name} x${qty}，獲得了 ${earn} 金幣。`, "var(--gold)");
-    updateUI();
-    renderSellMats(); 
-}
-
-function saveGameWithFeedback() {
-    saveGame(true); let btn = el('btn-save-game');
-    if(btn) { btn.innerText = "✔ 存檔成功"; btn.style.background = "var(--quest)"; setTimeout(() => { btn.innerText = "手動存檔"; btn.style.background = "var(--cherry)"; }, 1500); }
-}
-
+function saveGameWithFeedback() { saveGame(true); let btn = el('btn-save-game'); if(btn) { btn.innerText = "✔ 存檔成功"; btn.style.background = "var(--quest)"; setTimeout(() => { btn.innerText = "手動存檔"; btn.style.background = "var(--cherry)"; }, 1500); } }
 function innRest(cost) {
     if(player.hp >= getMaxHP()) return openModal("精神飽滿", "老闆看了看妳：「妳精神好得很，別來搗亂，快去打怪！」", "知道了");
     if(player.gold >= cost) {
-        player.gold -= cost; isResting = true; 
-        let backBtn = el('btn-back-village'); if(backBtn) backBtn.disabled = true;
-        let area = el('btn-inn-rest'); if(area) area.disabled = true;
-        let sec = 5; 
-        const timer = setInterval(() => {
-            sec--; if(area) area.innerText = `💤 休息中... ${sec}`;
-            if(sec <= 0) { 
-                clearInterval(timer); isResting = false; 
-                if(backBtn) backBtn.disabled = false; 
-                player.hp = getMaxHP(); updateUI(); 
-                if(area) area.innerText = "休息完畢"; 
-                openModal("✨ 休息完畢", "妳感到神清氣爽，體力已完全恢復！", "出發", () => showSubView('inn')); 
-            }
-        }, 1000);
+        player.gold -= cost; isResting = true; let backBtn = el('btn-back-village'); if(backBtn) backBtn.disabled = true; let area = el('btn-inn-rest'); if(area) area.disabled = true;
+        let sec = 5; const timer = setInterval(() => { sec--; if(area) area.innerText = `💤 休息中... ${sec}`; if(sec <= 0) { clearInterval(timer); isResting = false; if(backBtn) backBtn.disabled = false; player.hp = getMaxHP(); updateUI(); if(area) area.innerText = "休息完畢"; openModal("✨ 休息完畢", "妳感到神清氣爽，體力已完全恢復！", "出發", () => showSubView('inn')); } }, 1000);
     } else openModal("金幣不足", "客棧老闆無奈地搖了搖頭，請回吧。", "知道了");
 }
 
 function updateShopInvDisplay() {
     let inv = el('shop-inventory-display');
-    if(inv && player.potions) {
-        // 🎯 使用查表名稱
-        inv.innerHTML = `<b>目前持有庫存：</b><br>${getItem('p1').name}: ${player.potions.p1 || 0} | ${getItem('p2').name}: ${player.potions.p2 || 0}<br>${getItem('p3').name}: ${player.potions.p3 || 0} | ${getItem('p4').name}: ${player.potions.p4 || 0}<br>${getItem('revive').name}: ${player.revives}`;
-    }
+    if (!inv || !player.potions) return;
+    let displayTexts = [];
+    Object.values(ITEM_DB).filter(i => i.cat === 'rec').forEach(item => { let count = player.potions[item.id] || 0; displayTexts.push(`${item.name}: <b style="color:white">${count}</b>`); });
+    let reviveCount = player.revives || 0; displayTexts.push(`${getItem('revive').name}: <b style="color:white">${reviveCount}</b>`);
+    let formattedHtml = "<b>目前持有庫存：</b><br>";
+    for (let i = 0; i < displayTexts.length; i += 2) { let line = displayTexts.slice(i, i + 2).join(" | "); formattedHtml += line + "<br>"; }
+    inv.innerHTML = formattedHtml;
 }
-
 function backToVillage() { 
+    // 🔒 宗師防呆鎖定：打工中按下返回無效
+    if (player.workStartTime) {
+        log("📢 老闆：工還沒做完想溜啊？點擊紅色的收工按鈕才能走！", "var(--danger)");
+        return; 
+    }
     let sv = el('sub-view'); if(sv) sv.classList.add('hidden'); 
     let vm = el('village-menu'); if(vm) vm.classList.remove('hidden'); 
 }
-function changeMap() { 
-    const sel = el('map-selector'); if(!sel) return;
-    player.mapIdx = parseInt(sel.value); player.kills=0; combatState.zenTimer = 0; combatState.zenDmgAccum = 0; spawn(); updateMapSelector(); 
-}
+function changeMap() { const sel = el('map-selector'); if(!sel) return; player.mapIdx = parseInt(sel.value); player.kills=0; combatState.zenTimer = 0; combatState.zenDmgAccum = 0; spawn(); updateMapSelector(); }
 function manualBoss() { spawn(true); }
-function showDmg(tid, txt, col) { 
-    const b = el(tid); if(!b) return; 
-    const e = document.createElement('div'); e.className='dmg-text'; e.innerText=txt; e.style.color=col; 
-    b.appendChild(e); setTimeout(()=>e.remove(), 800); 
-}
-function log(m, color = "#888") { 
-    const l = el('log'); if(l) l.innerHTML = `<span style="color:${color}">> ${m}</span><br>` + l.innerHTML; 
-}
+function showDmg(tid, txt, col) { const b = el(tid); if(!b) return; const e = document.createElement('div'); e.className='dmg-text'; e.innerText=txt; e.style.color=col; b.appendChild(e); setTimeout(()=>e.remove(), 800); }
+function log(m, color = "#888") { const l = el('log'); if(l) l.innerHTML = `<span style="color:${color}; font-size:1.05em;">> ${m}</span><br>` + l.innerHTML; }
 
 function openModal(t,b,bt,cb,showCancel=false) { 
-    isPaused=true; 
-    let titleEl = el('modal-title'); if(titleEl) titleEl.innerText=t; 
-    let bodyEl = el('modal-body'); if(bodyEl) bodyEl.innerHTML=b;
-    const btn=el('modal-confirm-btn'); if(btn) btn.innerText=bt;
-    const cBtn=el('modal-cancel-btn'); if(cBtn) cBtn.style.display=showCancel?'block':'none';
-    let isMainMenu = false; let slotScreen = el('slot-screen');
-    if(slotScreen) isMainMenu = !slotScreen.classList.contains('hidden');
-    
-    if(btn) btn.onclick=()=>{ 
-        if(cb && cb() === false) return; 
-        let gm = el('game-modal'); if(gm) gm.style.display='none'; 
-        if(!isMainMenu) { isPaused=false; if(currentView==='battle') startBattleLoop(); } 
-    };
-    if(cBtn) cBtn.onclick=()=>{ 
-        let gm = el('game-modal'); if(gm) gm.style.display='none'; 
-        if(!isMainMenu) { isPaused=false; if(currentView==='battle') startBattleLoop(); } 
-    };
+    isPaused=true; let titleEl = el('modal-title'); if(titleEl) titleEl.innerText=t; let bodyEl = el('modal-body'); if(bodyEl) bodyEl.innerHTML=b;
+    const btn=el('modal-confirm-btn'); if(btn) btn.innerText=bt; const cBtn=el('modal-cancel-btn'); if(cBtn) cBtn.style.display=showCancel?'block':'none';
+    let isMainMenu = false; let slotScreen = el('slot-screen'); if(slotScreen) isMainMenu = !slotScreen.classList.contains('hidden');
+    if(btn) btn.onclick=()=>{ if(cb && cb() === false) return; let gm = el('game-modal'); if(gm) gm.style.display='none'; if(!isMainMenu) { isPaused=false; if(currentView==='battle' && !player.workStartTime) startBattleLoop(); } };
+    if(cBtn) cBtn.onclick=()=>{ let gm = el('game-modal'); if(gm) gm.style.display='none'; if(!isMainMenu) { isPaused=false; if(currentView==='battle' && !player.workStartTime) startBattleLoop(); } };
     let gm = el('game-modal'); if(gm) gm.style.display='flex'; 
 }
 
-window.onload = () => { initSlotScreen(); setInterval(() => { if(!isPaused && currentSlotKey && player.name) saveGame(false); }, 5000); };
+window.onload = () => { 
+    initSlotScreen(); 
+    
+    // 原本的 5 秒存檔機制
+    setInterval(() => { 
+        if(!isPaused && currentSlotKey && player.name && !player.workStartTime) {
+            saveGame(false); 
+        }
+    }, 5000); 
+
+    // ✨ 新增的 1 秒時鐘：只要在打工畫面，每秒更新一次創造跳錢效果
+    setInterval(() => {
+        if (player.workStartTime && currentView === 'village' && !el('sub-view').classList.contains('hidden')) {
+            showSubView('work'); 
+        }
+    }, 1000); 
+};
 </script>
 </body>
 </html>
