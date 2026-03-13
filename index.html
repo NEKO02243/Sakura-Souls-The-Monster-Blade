@@ -1086,7 +1086,7 @@ function renderHelper() {
             <h3 style="color:#fdcb6e; margin-top:0; font-size:1.3em;">⛩️ ${hdb.name}</h3>
             <p style="color:#aaa; font-size:1em; margin: 15px 0;">${hdb.desc}</p>
             <div style="margin-top:20px; font-size:1.1em; background:#000; padding:10px; border-radius:5px; border:1px solid #333;">在線合約剩餘：${leftTxt}</div>
-            <div style="margin-top:15px; font-size:0.85em; color:#666;">只要在此世界活動(不含休息/離線)，時間便會流逝。</div>
+            <div style="margin-top:15px; font-size:0.85em; color:#666;">※ 時間僅在荒野戰鬥或道場修行時流逝。<br>(回村待機、離線、或於旅籠屋休息時，時間將會停止)</div>
         </div>
     `;
 }
@@ -1324,6 +1324,27 @@ function showSubView(s) {
 
 function renderIzakaya(tab = 'helper') {
     const c = el('sub-content'); if(!c) return; 
+    
+    // ✨ 宗師優化：即時計算目前夥伴的剩餘時間文字
+    let currentHelperTime = "無合約";
+    if (player.helper && player.helper.id && player.helper.remainSec > 0) {
+        currentHelperTime = formatHelperTime(player.helper.remainSec);
+    }
+
+    // ✨ 新增：頂部資訊看板 (金幣與合約時間)
+    let infoBarHtml = `
+        <div style="background:rgba(0,0,0,0.4); padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #444; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <span style="color:#aaa; font-size:0.85em;">💰 持有金幣</span><br>
+                <b style="color:var(--gold); font-size:1.1em;">$${player.gold.toLocaleString()}</b>
+            </div>
+            <div style="text-align:right;">
+                <span style="color:#aaa; font-size:0.85em;">⌛ 目前合約剩餘</span><br>
+                <b style="color:var(--quest); font-size:1.1em;">${currentHelperTime}</b>
+            </div>
+        </div>
+    `;
+
     let contentHtml = "";
     Object.values(HELPER_DB).forEach(h => {
         let isHired = player.helper && player.helper.id === h.id;
@@ -1335,10 +1356,10 @@ function renderIzakaya(tab = 'helper') {
                 <div style="flex:1;">
                     <b style="color:#fdcb6e;">${h.name}</b> ${bonusLabel}<br>
                     <small style="color:#aaa; display:block; margin:5px 0;">${h.desc}</small>
-                    <small style="color:var(--cherry);">在線合約：${h.duration} 分鐘</small>
+                    <small style="color:var(--cherry);">單次簽署：+${h.duration} 分鐘</small>
                 </div>
                 <button class="btn-action" 
-                        style="background:${canAfford ? 'var(--quest)' : '#444'}; color:${canAfford ? 'black' : '#888'};" 
+                        style="background:${canAfford ? 'var(--quest)' : '#444'}; color:${canAfford ? 'black' : '#888'}; min-width:80px;" 
                         onclick="hireHelper('${h.id}')">
                     ${isHired ? '續約' : '簽約'}<br><small>$${h.cost}</small>
                 </button>
@@ -1347,30 +1368,38 @@ function renderIzakaya(tab = 'helper') {
 
     c.innerHTML = `
         <h3>🤝 夥伴結契</h3>
-        <p style="color:#aaa; font-size:0.9em; margin-bottom:15px;">老闆娘：「這些都是里中有名的好手，只要錢給到位，他們很樂意出份力。」</p>
+        <p style="color:#aaa; font-size:0.9em; margin-bottom:15px;">老闆娘：「只要錢給到位，里中的好手們隨時為您效力。」</p>
+        ${infoBarHtml}
         ${contentHtml}
         <button class="btn-action" style="width:100%; margin-top:15px; background:#444; color:white;" onclick="showSubView('izakaya')">返回居酒屋</button>
     `;
 }
 
+
 // ✨ 夥伴在線招募邏輯
 function hireHelper(id) { 
     let h = HELPER_DB[id]; 
+    if(!h) return;
+    
     if(player.gold >= h.cost) { 
+        // 扣除金幣
         player.gold -= h.cost; 
-        let buySec = h.duration * 60; // 分鐘轉秒數
+        let buySec = h.duration * 60; // 分鐘轉為秒數
 
         if (player.helper && player.helper.id === id) {
+            // 同一人續約，在線秒數直接累加
             player.helper.remainSec += buySec;
-            log(`🍶 續約成功！${h.name} 的在線時長增加了 ${h.duration} 分鐘。`, "#fdcb6e"); 
+            log(`🍶 續約成功！時間增加了 ${h.duration} 分鐘。`, "#fdcb6e"); 
         } else {
+            // 新簽約 (會覆蓋前一個不同的夥伴)
             player.helper = { id: id, remainSec: buySec }; 
-            log(`🍶 成功與 ${h.name} 簽訂結契！`, "#fdcb6e"); 
+            log(`🍶 成功與 ${h.name} 簽訂結契！時長 ${h.duration} 分鐘。`, "#fdcb6e"); 
         }
+        
         updateUI(); 
-        renderIzakaya('helper'); 
+        renderIzakaya('helper'); // ✨ 關鍵：按完按鈕後立刻刷新居酒屋介面，讓錢和時間即時跳動
     } else { 
-        openModal("金幣不足", "老闆娘：錢不夠啊，小哥。", "抱歉"); 
+        openModal("金幣不足", "老闆娘：錢不夠啊，小哥。去外面多打點怪吧！", "抱歉"); 
     } 
 }
 
