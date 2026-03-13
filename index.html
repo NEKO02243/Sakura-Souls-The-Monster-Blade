@@ -458,7 +458,8 @@ function startGame() { el('slot-screen').classList.add('hidden'); el('main-game'
 function allocInitStat(t, val) { if (player.statPoints > 0) { player.statPoints--; initAllocatedStats[t]++; } el(`init-${t}`).innerText = initAllocatedStats[t]; el('init-points').innerText = player.statPoints; }
 function resetInitStats() { player.statPoints = 5; initAllocatedStats = { str: 2, vit: 1, agi: 0 }; ['str','vit','agi'].forEach(s => el(`init-${s}`).innerText = initAllocatedStats[s]); el('init-points').innerText = 5; el('init-error').style.display = 'none'; }
 
-// ✨ 終極醫療清洗版 loadGame
+const CURRENT_VERSION = "0.4.2"; 
+
 function loadGame() { 
     let s = localStorage.getItem(currentSlotKey); 
     player = JSON.parse(JSON.stringify(defaultPlayer));
@@ -466,19 +467,44 @@ function loadGame() {
     if(s) {
         try {
             let sd = JSON.parse(s); 
+            // 🕵️‍♂️ ✨ [宗師級：異常偵測系統] ✨
+            // 判定異常的條件：
+            // 1. 金幣是 NaN 或是 null
+            // 2. 等級小於 1 或是非數字
+            // 3. 關鍵的屬性 (str, vit, agi) 出現非數值
+            let isDataCorrupted = 
+                (sd.gold === null || isNaN(Number(sd.gold))) || 
+                (isNaN(Number(sd.lvl)) || sd.lvl < 1) ||
+                (isNaN(Number(sd.str)) || isNaN(Number(sd.vit)));
 
-            // 1. 修復金幣 (防止 null 導致 UI 崩潰)
-            if (sd.gold === null || sd.gold === undefined) sd.gold = 0;
+            if (isDataCorrupted) {
+                // 🚨 偵測到異常資料，啟動轉生補償程序
+                let oldLvl = Number(sd.lvl) || 1;
+                if (isNaN(oldLvl)) oldLvl = 1;
+                let compensationGold = (oldLvl * 500) + 2000;
+
+                player = JSON.parse(JSON.stringify(defaultPlayer));
+                player.name = sd.name || "重生者";
+                player.gameVersion = CURRENT_VERSION;
+                player.gold = compensationGold;
+                player.revives = 5; // 額外補償御守
+
+                openModal("🌌 時空裂縫修補", 
+                    `偵測到您的靈魂檔案存在異常損毀...<br><br>` +
+                    `為了修復您的修行軌跡，宗師已為您重塑肉身：<br>` +
+                    `💰 轉生補償：<b style="color:var(--gold);">$${compensationGold.toLocaleString()}</b><br>` +
+                    `🛡️ 不死御守：<b style="color:var(--cherry);">5 個</b><br><br>` +
+                    `<small style="color:var(--quest);">異常數據已清理完畢，您可以重新開始了。</small>`, 
+                    "重塑靈魂", () => {
+                        saveGame(false);
+                        location.reload();
+                    });
+                return; // 終止異常資料的載入
+            }
+
+            // --- 以下為資料正常時的載入邏輯 ---
             
-            // 2. 修復地圖與基本屬性
-            if (sd.mapIdx === undefined) sd.mapIdx = 1;
-            if (sd.maxMapIdx === undefined) sd.maxMapIdx = 1;
-            if (sd.lvl === undefined || sd.lvl <= 0) sd.lvl = 1;
-            if (sd.str === undefined || sd.str === null) sd.str = 2;
-            if (sd.vit === undefined || sd.vit === null) sd.vit = 1;
-            if (sd.agi === undefined || sd.agi === null) sd.agi = 0;
-
-            // 3. 保證容器結構不為 null
+            // 基礎結構補齊 (Object.assign)
             player.potions = Object.assign({}, defaultPlayer.potions, sd.potions || {});
             player.mats = Object.assign({}, defaultPlayer.mats, sd.mats || {});
             player.gear = Object.assign({}, defaultPlayer.gear, sd.gear || {});
@@ -487,30 +513,22 @@ function loadGame() {
             player.skillGambits = sd.skillGambits || [0, 0, 0, 0];
             player.skillGambitValues = sd.skillGambitValues || [50, 50, 50, 50];
             player.skillGambitOps = sd.skillGambitOps || ['<', '<', '<', '<'];
-            
-            // 確保 helper 結構安全
             player.helper = Object.assign({}, defaultPlayer.helper, sd.helper || {});
-            if (player.helper.remainSec === undefined) player.helper.remainSec = 0;
 
-            // 4. 正式載入覆蓋
             Object.assign(player, sd); 
+            player.gameVersion = CURRENT_VERSION; // 正常載入也順便標記版本
             player.lockedStats = { str: 2, vit: 1, agi: 0 }; 
 
-            // 5. 二次防呆強制轉型
-            player.gold = Number(player.gold) || 0;
-            player.hp = Math.min(Number(player.hp) || getMaxHP(), getMaxHP());
-
-            // 6. 地圖越界防護
+            // 確保地圖範圍
             if(player.mapIdx >= maps.length) player.mapIdx = maps.length - 1; 
             if(player.maxMapIdx >= maps.length) player.maxMapIdx = maps.length - 1;
-            if(player.workStartTime === undefined) player.workStartTime = null; 
 
-            // 7. 戰鬥實體防呆
-            if(!monster || !monster.name) {
-                monster = { id: "", name: "", hp: 0, mhp: 0, atk: 0, lvl: 1, isBoss: false, defVal: 0, dr: 0, eva: 0 };
-            }
-
-        } catch(e) { console.error("Save Parse Error", e); }
+        } catch(e) { 
+            console.error("解析存檔發生嚴重錯誤:", e);
+            // 連 JSON.parse 都失敗的情況下，也視為異常進行重置
+            player = JSON.parse(JSON.stringify(defaultPlayer));
+            saveGame(false);
+        }
     }
     
     initPotionSelect();
@@ -537,10 +555,27 @@ function postLoadInit() {
     if(currentView === 'battle' && !player.workStartTime) startBattleLoop(); 
     if(player.workStartTime) { isPaused = true; switchView('village'); showSubView('work'); }
 }
-
 function saveGame(manual) { 
     if (statPreview.str > 0 || statPreview.vit > 0 || statPreview.agi > 0) { if(manual) log("⚠️ 請先確定或取消配點後再進行存檔。", "var(--danger)"); return; }
-    player.lastSaveTime = Date.now(); localStorage.setItem(currentSlotKey, JSON.stringify(player)); 
+
+    // ✨ [宗師級除毒] 核心數值強制排毒，防止 NaN 寫入存檔
+    player.gold = Number(player.gold) || 0;
+    player.exp = Number(player.exp) || 0;
+    player.lvl = Number(player.lvl) || 1;
+    player.hp = Number(player.hp) || 100;
+    
+    // 夥伴數據排毒
+    if (player.helper) {
+        player.helper.remainSec = Number(player.helper.remainSec) || 0;
+        // 如果 remainSec 變成負數或 NaN，強制歸零並解除合約
+        if (player.helper.remainSec <= 0) {
+            player.helper.remainSec = 0;
+            player.helper.id = null;
+        }
+    }
+
+    player.lastSaveTime = Date.now(); 
+    localStorage.setItem(currentSlotKey, JSON.stringify(player)); 
     if(manual) log("✔ 靈魂記憶已封存於石碑之中。", "var(--quest)"); 
 }
 
@@ -710,21 +745,19 @@ function startBattleLoop() {
     if(battleTimer) clearTimeout(battleTimer); 
     if(isPaused || currentView !== 'battle' || isReviving) return;
     
-    if(player.autoHealEnabled && player.autoHeal > 0 && (player.hp / getMaxHP()) < player.autoHeal) autoHealLogic();
-    
     let delay = 1500 / (1 + player.agi * 0.025); 
     if (delay < 200) delay = 200; 
-    let tickSec = delay / 1000;
-    
-    for(let i=0; i<4; i++) if(combatState.skillCds[i] > 0) combatState.skillCds[i] = Math.max(0, combatState.skillCds[i] - tickSec);
-    if(combatState.potionCd > 0) combatState.potionCd = Math.max(0, combatState.potionCd - tickSec);
+    let tickSec = Number((delay / 1000).toFixed(3)); // ✨ 強制限制小數點位數，避免浮點運算錯誤
 
-    // ✨ [核心改動] 夥伴在線扣秒
+    // 夥伴秒數扣除 (排毒版)
     if (player.helper && player.helper.id && player.helper.remainSec > 0) {
-        player.helper.remainSec = Math.max(0, player.helper.remainSec - tickSec);
+        let currentSec = Number(player.helper.remainSec) || 0;
+        player.helper.remainSec = Math.max(0, currentSec - tickSec);
+        
         if (player.helper.remainSec <= 0) {
-            log(`⛩️ ${HELPER_DB[player.helper.id].name} 的合約已到期，離隊了。`, "var(--cherry)");
+            log(`⛩️ ${HELPER_DB[player.helper.id] ? HELPER_DB[player.helper.id].name : "夥伴"} 的合約已到期。`, "var(--cherry)");
             player.helper.id = null;
+            player.helper.remainSec = 0;
             updateUI();
         }
     }
@@ -897,9 +930,14 @@ function handleDeath() {
 }
 
 function checkLevelUp() { 
-    while(player.exp >= player.next) { 
-        player.lvl++; 
+    // 確保所有數值在計算前都是有效的數字
+    player.exp = Number(player.exp) || 0;
+    player.next = Number(player.next) || 30;
+
+    while(player.exp >= player.next && player.next > 0) { 
+        player.lvl = (Number(player.lvl) || 1) + 1; 
         player.exp -= player.next; 
+        
         let growth = player.lvl < 20 ? 1.2 : 1.1; 
         player.next = Math.floor(player.next * growth) + (player.lvl * 5); 
         player.statPoints += 3; 
@@ -907,6 +945,7 @@ function checkLevelUp() {
         log("🎉 境界提升！體力已恢復。", "var(--cherry)"); 
         checkSkillUnlocks(); 
     } 
+    updateUI();
 }
 
 function spawn(boss = false) {
