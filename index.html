@@ -467,18 +467,13 @@ function loadGame() {
     if(s) {
         try {
             let sd = JSON.parse(s); 
-            // 🕵️‍♂️ ✨ [宗師級：異常偵測系統] ✨
-            // 判定異常的條件：
-            // 1. 金幣是 NaN 或是 null
-            // 2. 等級小於 1 或是非數字
-            // 3. 關鍵的屬性 (str, vit, agi) 出現非數值
+            // 🕵️‍♂️ [異常偵測系統] 
             let isDataCorrupted = 
                 (sd.gold === null || isNaN(Number(sd.gold))) || 
                 (isNaN(Number(sd.lvl)) || sd.lvl < 1) ||
                 (isNaN(Number(sd.str)) || isNaN(Number(sd.vit)));
 
             if (isDataCorrupted) {
-                // 🚨 偵測到異常資料，啟動轉生補償程序
                 let oldLvl = Number(sd.lvl) || 1;
                 if (isNaN(oldLvl)) oldLvl = 1;
                 let compensationGold = (oldLvl * 500) + 2000;
@@ -487,7 +482,7 @@ function loadGame() {
                 player.name = sd.name || "重生者";
                 player.gameVersion = CURRENT_VERSION;
                 player.gold = compensationGold;
-                player.revives = 5; // 額外補償御守
+                player.revives = 5;
 
                 openModal("🌌 時空裂縫修補", 
                     `偵測到您的靈魂檔案存在異常損毀...<br><br>` +
@@ -499,12 +494,10 @@ function loadGame() {
                         saveGame(false);
                         location.reload();
                     });
-                return; // 終止異常資料的載入
+                return; 
             }
 
-            // --- 以下為資料正常時的載入邏輯 ---
-            
-            // 基礎結構補齊 (Object.assign)
+            // --- 資料正常載入邏輯 ---
             player.potions = Object.assign({}, defaultPlayer.potions, sd.potions || {});
             player.mats = Object.assign({}, defaultPlayer.mats, sd.mats || {});
             player.gear = Object.assign({}, defaultPlayer.gear, sd.gear || {});
@@ -516,16 +509,14 @@ function loadGame() {
             player.helper = Object.assign({}, defaultPlayer.helper, sd.helper || {});
 
             Object.assign(player, sd); 
-            player.gameVersion = CURRENT_VERSION; // 正常載入也順便標記版本
+            player.gameVersion = CURRENT_VERSION;
             player.lockedStats = { str: 2, vit: 1, agi: 0 }; 
 
-            // 確保地圖範圍
             if(player.mapIdx >= maps.length) player.mapIdx = maps.length - 1; 
             if(player.maxMapIdx >= maps.length) player.maxMapIdx = maps.length - 1;
 
         } catch(e) { 
             console.error("解析存檔發生嚴重錯誤:", e);
-            // 連 JSON.parse 都失敗的情況下，也視為異常進行重置
             player = JSON.parse(JSON.stringify(defaultPlayer));
             saveGame(false);
         }
@@ -544,7 +535,21 @@ function loadGame() {
     } else { 
         checkSkillUnlocks(); 
         postLoadInit(); 
-    } 
+    } // ✨ 這裡原本漏掉了一個括號，現在補上了
+
+    // ✨ [宗師終極加強區]
+    // 不論從哪個路徑載入（新創或舊檔），最終都進行強制排毒
+    player.gold = Number(player.gold) || 0;
+    player.exp = Number(player.exp) || 0;
+    player.lvl = Number(player.lvl) || 1;
+    player.str = Number(player.str) || 2;
+    player.vit = Number(player.vit) || 1;
+    player.agi = Number(player.agi) || 0;
+    
+    if (player.helper) {
+        player.helper.remainSec = Number(player.helper.remainSec) || 0;
+    }
+    updateUI(); 
 }
 
 function postLoadInit() { 
@@ -1257,6 +1262,9 @@ function startWork() {
 
 function stopWork() {
     let now = Date.now();
+    // 🛡️ 防呆：如果 workStartTime 莫名其妙消失，直接給現在時間，讓秒數變 0
+    if (!player.workStartTime) player.workStartTime = now; 
+
     let hourlyRate = 1200 + (player.lvl * 100);
     
     if (player.helper && player.helper.id && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].workBonus) {
@@ -1264,11 +1272,20 @@ function stopWork() {
     }
 
     let elapsedSecs = Math.floor((now - player.workStartTime) / 1000);
+    
+    // 🛡️ 時空防線：防止負數或 NaN
+    if (isNaN(elapsedSecs) || elapsedSecs < 0) elapsedSecs = 0;
+    
+    // 🛡️ 上限防線：防止系統時間大跳躍（例如單次打工上限 12 小時）
+    if (elapsedSecs > 43200) elapsedSecs = 43200;
+
     let earn = Math.floor((elapsedSecs / 3600) * hourlyRate);
     
     if (earn > 0) {
-        player.gold += earn;
-        log(`💰 老闆：「辛苦啦！這是你的工錢。」獲得了 $${earn}。`, "var(--gold)");
+        // ✨ 強制排毒式相加：確保留在錢包裡的永遠是數字
+        let currentGold = Number(player.gold) || 0;
+        player.gold = currentGold + earn;
+        log(`💰 老闆：「辛苦啦！這是你的工錢。」獲得了 $${earn.toLocaleString()}。`, "var(--gold)");
     } else {
         log("💨 工作時間太短，老闆揮揮手叫你趕快走。", "#888");
     }
