@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>永夜之境：宗師歸來 V0.4.0 (神啟與血契版)</title>
+    <title>永夜之境：宗師歸來 V0.4.2 (秘技覺醒與在線契約版)</title>
     <style>
         :root { --bg: #0a0a0f; --panel: #161622; --gold: #ffd700; --cherry: #ffb7c5; --accent: #70a1ff; --quest: #55efc4; --danger: #ff4757; --gm: #00cec9; --mat: #e1b12c; --skill: #9b59b6; --passive: #f39c12; }
         body { background: var(--bg); color: #e0e0e0; font-family: 'PingFang TC', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 0; margin: 0; overflow-x: hidden; }
@@ -133,7 +133,7 @@
 <div id="slot-screen">
     <div style="text-align: center; margin-bottom: 30px;">
         <h1 style="color:var(--cherry); margin-bottom: 5px;">⛩️ 永夜之境 ⛩️</h1>
-        <small style="color: #666; letter-spacing: 2px;">宗師歸來 V0.4.0 (神啟與血契版)</small>
+        <small style="color: #666; letter-spacing: 2px;">宗師歸來 V0.4.2 (秘技覺醒與在線契約版)</small>
     </div>
     <div id="slots-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
     <div style="margin-top: 30px; font-size: 0.85em; color: #888; text-align: center; line-height: 1.5;">
@@ -239,6 +239,8 @@
             </div>
         </div>
         
+        <div id="stat-hint" style="text-align:center; font-size:0.85em; color:var(--accent); margin-top:10px; height:1.2em; font-style:italic;"></div>
+
         <div id="detailed-stats" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 0.95em; display: flex; justify-content: space-around; color: #aaa; border: 1px solid #333;">
             <span title="物理傷害 (基礎+裝備+夥伴)">🗡️ <span id="det-atk" style="color:white">0</span></span>
             <span title="攻擊間隔 (每點AGI增加頻率)">⚡ <span id="det-spd" style="color:white">0</span></span> 
@@ -270,9 +272,18 @@
             </div>
             <div id="inv-list"></div>
         </div>
-        <div id="skill-area" class="li-content-box hidden" style="padding:10px;"></div>
-        <div id="helper-area" class="li-content-box hidden" style="padding:10px;"></div>
+        
+        <div id="skill-area" class="li-content-box hidden" style="padding:10px;">
+            <div class="inv-filter" style="margin-bottom:10px;">
+                <button class="f-btn active" id="sb-all" onclick="setSkillFilter('all')">全部</button>
+                <button class="f-btn" id="sb-init" onclick="setSkillFilter('init')">基礎</button>
+                <button class="f-btn" id="sb-job" onclick="setSkillFilter('job')">流派</button>
+                <button class="f-btn" id="sb-secret" onclick="setSkillFilter('secret')">秘笈</button>
+            </div>
+            <div id="skill-list-content"></div>
+        </div>
 
+        <div id="helper-area" class="li-content-box hidden" style="padding:10px;"></div>
     </div>
 
     <div id="view-village" class="view-content hidden">
@@ -298,6 +309,22 @@
 
 <script>
 /* ==========================================================================
+   📦 工具函數區 (宗師級時間格式化)
+   ========================================================================== */
+function formatHelperTime(totalSeconds) {
+    if (totalSeconds <= 0) return "已到期";
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+
+    if (days >= 1) return `${days} 天 ${hours} 小時`;
+    if (hours >= 1) return `${hours} 小時 ${minutes} 分`;
+    if (minutes >= 1) return `${minutes} 分 ${seconds} 秒`;
+    return `${seconds} 秒`;
+}
+
+/* ==========================================================================
    📦 中央數據庫 ITEM_DB, MOB_DB, HELPER_DB
    ========================================================================== */
 const ITEM_DB = {
@@ -306,7 +333,6 @@ const ITEM_DB = {
     'p3': { id: 'p3', cat: 'rec', name: '行軍丸子', tag: '恢復30%', cost: 300, value: 0, rate: 0.3, sellable: true, sellPrice: 100, shopAvailable: true, shopTab: 'rec', desc: '專業配方煉製的補給，效果顯著。' },
     'p4': { id: 'p4', cat: 'rec', name: '天照御神露', tag: '全恢復', cost: 2000, value: 0, rate: 1.0, sellable: true, sellPrice: 500, shopAvailable: true, shopTab: 'rec', desc: '傳說中的神水，完全恢復。' },
     
-
     'm0': { id: 'm0', cat: 'mat', name: '妖化鐵砂', sellable: true, sellPrice: 2, shopAvailable: false, shopTab: 'mat', desc: '受妖氣侵蝕的細砂。' },
     'm1': { id: 'm1', cat: 'mat', name: '竹妖的韌皮', sellable: true, sellPrice: 5, shopAvailable: false, shopTab: 'mat', desc: '竹妖身上最堅韌的部分。' },
     'm2': { id: 'm2', cat: 'mat', name: '怨念的木片', sellable: true, sellPrice: 15, shopAvailable: false, shopTab: 'mat', desc: '寄宿著森林亡魂的碎木。' },
@@ -314,30 +340,29 @@ const ITEM_DB = {
     'm4': { id: 'm4', cat: 'mat', name: '雷精的碎核', sellable: true, sellPrice: 80, shopAvailable: false, shopTab: 'mat', desc: '強大雷電能量的結晶體。' },
 
     'revive': { id: 'revive', cat: 'oth', name: '不死御守', tag: '復活', cost: 5000, sellable: false, sellPrice: 0, shopAvailable: true, shopTab: 'oth', desc: '抵擋一次致命傷害。' },
-    'wash_stats': { id: 'wash_stats', cat: 'oth', name: '忘卻之水', tag: '重置', cost: 100, sellable: false, sellPrice: 0, shopAvailable: true, shopTab: 'oth', desc: '重置所有已分配的屬性。' },
-    'b1': { id: 'b1', cat: 'buff', name: '力之酒(預留)', tag: '增益', cost: 500, sellable: true, sellPrice: 100, shopAvailable: false, shopTab: 'buff', desc: '短時間提升攻擊力。' }
+    'wash_stats': { id: 'wash_stats', cat: 'oth', name: '忘卻之水', tag: '重置', cost: 100, sellable: false, sellPrice: 0, shopAvailable: true, shopTab: 'oth', desc: '重置所有已分配的屬性。' }
 };
 
 function getItem(id) { return ITEM_DB[id] || { name: "不明物體", cost: 0, val: 0, rate: 0, value: 0, sellable: false, sellPrice: 0 }; }
 
-// ⛩️ 夥伴資料庫 (已修復語法錯誤，並整合了主被動技能與打工加成)
+// ⛩️ 夥伴資料庫 (修改 duration 為分鐘)
 const HELPER_DB = {
     'h1': { 
-        id: 'h1', name: '流浪浪人・伍丸', cost: 300, duration: 20,
+        id: 'h1', name: '流浪浪人・伍丸', cost: 300, duration: 30, // 30 分鐘
         skillType: 'attack', skillVal: 15, skillCd: 6,
         passive: (p) => { return { atk: 3, def: 0, eva: 0 }; }, 
         workBonus: { rate: 1.2, label: "護衛：工錢提升 20%" },
         desc: '追求劍道的浪人。增加基礎攻擊 3 點，每 6 秒施放一次斬擊（15點真實傷害）。' 
     },
     'h2': { 
-        id: 'h2', name: '見習巫女・小葵', cost: 300, duration: 20,
+        id: 'h2', name: '見習巫女・小葵', cost: 300, duration: 30,
         skillType: 'heal', skillVal: 40, skillCd: 8,
         passive: (p) => { return { atk: 0, def: 2, eva: 0 }; }, 
         workBonus: { rate: 1.15, label: "人氣：小費提升 15%" },
         desc: '里中神社的修行者。增加減傷 2%，每 8 秒恢復 40 點生命值。' 
     },
     'h3': { 
-        id: 'h3', name: '陰陽生・安倍才藏', cost: 300, duration: 20,
+        id: 'h3', name: '陰陽生・安倍才藏', cost: 300, duration: 30,
         skillType: 'seal', skillVal: 1.5, skillCd: 10,
         passive: (p) => { return { atk: 0, def: 0, eva: 2 }; }, 
         workBonus: { rate: 1.0, label: "無打工加成" },
@@ -345,33 +370,21 @@ const HELPER_DB = {
     }
 };
 
-// 👹 怪物資料庫 V0.4.0 (包含雙層防禦定值、閃避)
 const MOB_DB = {
-    // [修行] 幽靜道場
     'm_dummy': { name: '朽木樁', hp: 1, atk: 0, defVal: 0, dr: 0, eva: 0, exp: 0, gold: 0, drops: [] },
-
-    // [補給] 靜謐荒野
     'm_rabbit': { name: '野生長耳兔', hp: 35, atk: 2, defVal: 0, dr: 0.02, eva: 5, exp: 3, gold: 2, drops: [{id:'p1', chance:0.25}, {id:'m0', chance:0.05}] },
     'm_fox_cub': { name: '落單幼狐', hp: 40, atk: 3, defVal: 0, dr: 0.02, eva: 8, exp: 4, gold: 3, drops: [{id:'p1', chance:0.30}, {id:'m0', chance:0.05}] },
     'b_wolf': { name: '飢餓的野狼', hp: 250, atk: 14, defVal: 5, dr: 0.10, eva: 10, isBoss: true, drops: [{id:'p2', chance:0.50}, {id:'m0', chance:0.50}] },
     'r_gold_rabbit': { name: '✨ 貪婪金兔', hp: 120, atk: 5, defVal: 2, dr: 0.05, eva: 30, isBoss: false, drops: [{id:'p2', chance:1.0}, {id:'m0', chance:1.0}] },
-
-    // 遺忘的竹林
     'm_dog': { name: '迷途犬', hp: 60, atk: 5, defVal: 3, dr: 0.05, eva: 10, exp: 6, gold: 5, drops: [{id:'p1', chance:0.10}, {id:'m1', chance:0.15}] },
     'm_bamboo': { name: '竹林小鬼', hp: 75, atk: 7, defVal: 5, dr: 0.08, eva: 5, exp: 7, gold: 6, drops: [{id:'m1', chance:0.15}, {id:'m0', chance:0.10}] },
     'b_lion': { name: '荒廢石獅子', hp: 500, atk: 22, defVal: 15, dr: 0.15, eva: 5, isBoss: true, drops: [{id:'p2', chance:0.80}, {id:'m1', chance:1.0}] },
-
-    // 靜謐之森
     'm_tengu': { name: '天狗', hp: 150, atk: 10, defVal: 10, dr: 0.10, eva: 20, exp: 15, gold: 15, drops: [{id:'p2', chance:0.10}, {id:'m2', chance:0.15}] },
     'm_yama': { name: '山童', hp: 180, atk: 13, defVal: 18, dr: 0.12, eva: 5, exp: 18, gold: 18, drops: [{id:'m2', chance:0.15}, {id:'m0', chance:0.10}] },
     'b_spirit': { name: '怨念木靈', hp: 1200, atk: 30, defVal: 25, dr: 0.20, eva: 15, isBoss: true, drops: [{id:'p3', chance:0.50}, {id:'m2', chance:1.0}] },
-
-    // 伏見古道
     'm_fox': { name: '白狐', hp: 350, atk: 18, defVal: 20, dr: 0.15, eva: 25, exp: 40, gold: 35, drops: [{id:'p2', chance:0.15}, {id:'m3', chance:0.15}] },
     'm_umbrella': { name: '紙傘怪', hp: 380, atk: 22, defVal: 25, dr: 0.18, eva: 15, exp: 45, gold: 40, drops: [{id:'m3', chance:0.15}, {id:'m0', chance:0.10}] },
     'b_inari': { name: '邪染稻荷使', hp: 3000, atk: 45, defVal: 40, dr: 0.25, eva: 20, isBoss: true, drops: [{id:'p4', chance:0.10}, {id:'m3', chance:1.0}] },
-
-    // 鳴神大社殘跡
     'm_thunder': { name: '雷精', hp: 900, atk: 30, defVal: 35, dr: 0.20, eva: 20, exp: 100, gold: 70, drops: [{id:'p3', chance:0.10}, {id:'m4', chance:0.15}] },
     'm_bird': { name: '雷震子', hp: 1000, atk: 35, defVal: 40, dr: 0.22, eva: 25, exp: 110, gold: 80, drops: [{id:'m4', chance:0.15}, {id:'m0', chance:0.10}] },
     'b_tengu': { name: '蒼雷大天狗', hp: 8000, atk: 70, defVal: 60, dr: 0.30, eva: 30, isBoss: true, drops: [{id:'p4', chance:0.50}, {id:'m4', chance:1.0}] }
@@ -386,12 +399,13 @@ const maps = [
     { name: "鳴神大社殘跡", minLvl: 30, maxLvl: 999, mobs: ["m_thunder", "m_bird"], boss: "b_tengu", rareMob: null }
 ];
 
+// ✨ 秘技資料庫 V0.4.2 (加入 cat 分類)
 const skillDB = {
-    'agi_combo1': { id: 'agi_combo1', name: '速擊', type: 'passive', desc: '攻擊時10%機率造成1.5倍傷害', color: '#70a1ff' },
-    'agi_combo2': { id: 'agi_combo2', name: '殘影', type: 'passive', desc: '攻擊時10%機率觸發二連擊', color: '#70a1ff' },
-    'vit_strike': { id: 'vit_strike', name: '剛力震擊', type: 'active', desc: '造成(攻擊+體質x2)的傷害', cd: 8, color: '#e1b12c' },
-    'vit_thorns': { id: 'vit_thorns', name: '震怒', type: 'passive', desc: '受傷時20%機率反彈所有傷害', color: '#e1b12c' },
-    'str_cleave': { id: 'str_cleave', name: '破甲重劈', type: 'active', desc: '造成2.5倍傷害，且破防15%', cd: 10, color: '#ff4757' }
+    'agi_combo1': { id: 'agi_combo1', cat: 'init', name: '速擊', type: 'passive', desc: '攻擊時10%機率造成1.5倍傷害', color: '#70a1ff' },
+    'agi_combo2': { id: 'agi_combo2', cat: 'init', name: '殘影', type: 'passive', desc: '攻擊時10%機率觸發二連擊', color: '#70a1ff' },
+    'vit_strike': { id: 'vit_strike', cat: 'init', name: '剛力震擊', type: 'active', desc: '造成(攻擊+體質x2)的傷害', cd: 8, color: '#e1b12c' },
+    'vit_thorns': { id: 'vit_thorns', cat: 'init', name: '震怒', type: 'passive', desc: '受傷時20%機率反彈所有傷害', color: '#e1b12c' },
+    'str_cleave': { id: 'str_cleave', cat: 'init', name: '破甲重劈', type: 'active', desc: '造成2.5倍傷害，且破防15%', cd: 10, color: '#ff4757' }
 };
 
 let currentSlotKey = "";
@@ -404,7 +418,7 @@ const defaultPlayer = {
     selectedPotion: 'p1', autoHeal: 0, autoHealEnabled: false,
     unlockedSkills: [], equippedSkills: [null, null, null, null],
     skillGambits: [0, 0, 0, 0], skillGambitValues: [50, 50, 50, 50], skillGambitOps: ['<', '<', '<', '<'],
-    helper: null 
+    helper: { id: null, remainSec: 0 }  // ✨ 確保在線秒數結構
 };
 
 let player = JSON.parse(JSON.stringify(defaultPlayer));
@@ -412,7 +426,7 @@ let monster = { id: "", name: "", hp: 0, mhp: 0, atk: 0, lvl: 1, isBoss: false, 
 let isPaused = true; let isReviving = false; let isResting = false;
 let currentView = 'battle'; let battleTimer = null; 
 let statPreview = { str: 0, vit: 0, agi: 0 };
-let currentLogTab = 'log'; let currentInvFilter = 'all';
+let currentLogTab = 'log'; let currentInvFilter = 'all'; let currentSkillFilter = 'all'; // ✨ 新增技能分類狀態
 let combatState = { mobAtkTimer: 2.0, skillCds: [0, 0, 0, 0], zenTimer: 0, zenDmgAccum: 0, potionCd: 0, helperSkillCd: 0 };
 let initAllocatedStats = { str: 2, vit: 1, agi: 0 };
 
@@ -444,6 +458,7 @@ function startGame() { el('slot-screen').classList.add('hidden'); el('main-game'
 function allocInitStat(t, val) { if (player.statPoints > 0) { player.statPoints--; initAllocatedStats[t]++; } el(`init-${t}`).innerText = initAllocatedStats[t]; el('init-points').innerText = player.statPoints; }
 function resetInitStats() { player.statPoints = 5; initAllocatedStats = { str: 2, vit: 1, agi: 0 }; ['str','vit','agi'].forEach(s => el(`init-${s}`).innerText = initAllocatedStats[s]); el('init-points').innerText = 5; el('init-error').style.display = 'none'; }
 
+// ✨ 終極醫療清洗版 loadGame
 function loadGame() { 
     let s = localStorage.getItem(currentSlotKey); 
     player = JSON.parse(JSON.stringify(defaultPlayer));
@@ -452,9 +467,18 @@ function loadGame() {
         try {
             let sd = JSON.parse(s); 
 
-            // ✨ [宗師新增] 醫療清洗：防止 gold 為 null 導致 .toLocaleString() 崩潰
+            // 1. 修復金幣 (防止 null 導致 UI 崩潰)
             if (sd.gold === null || sd.gold === undefined) sd.gold = 0;
             
+            // 2. 修復地圖與基本屬性
+            if (sd.mapIdx === undefined) sd.mapIdx = 1;
+            if (sd.maxMapIdx === undefined) sd.maxMapIdx = 1;
+            if (sd.lvl === undefined || sd.lvl <= 0) sd.lvl = 1;
+            if (sd.str === undefined || sd.str === null) sd.str = 2;
+            if (sd.vit === undefined || sd.vit === null) sd.vit = 1;
+            if (sd.agi === undefined || sd.agi === null) sd.agi = 0;
+
+            // 3. 保證容器結構不為 null
             player.potions = Object.assign({}, defaultPlayer.potions, sd.potions || {});
             player.mats = Object.assign({}, defaultPlayer.mats, sd.mats || {});
             player.gear = Object.assign({}, defaultPlayer.gear, sd.gear || {});
@@ -463,31 +487,51 @@ function loadGame() {
             player.skillGambits = sd.skillGambits || [0, 0, 0, 0];
             player.skillGambitValues = sd.skillGambitValues || [50, 50, 50, 50];
             player.skillGambitOps = sd.skillGambitOps || ['<', '<', '<', '<'];
+            
+            // 確保 helper 結構安全
+            player.helper = Object.assign({}, defaultPlayer.helper, sd.helper || {});
+            if (player.helper.remainSec === undefined) player.helper.remainSec = 0;
 
+            // 4. 正式載入覆蓋
             Object.assign(player, sd); 
             player.lockedStats = { str: 2, vit: 1, agi: 0 }; 
 
-            if(player.maxMapIdx < 1) player.maxMapIdx = 1; 
+            // 5. 二次防呆強制轉型
+            player.gold = Number(player.gold) || 0;
+            player.hp = Math.min(Number(player.hp) || getMaxHP(), getMaxHP());
+
+            // 6. 地圖越界防護
             if(player.mapIdx >= maps.length) player.mapIdx = maps.length - 1; 
             if(player.maxMapIdx >= maps.length) player.maxMapIdx = maps.length - 1;
             if(player.workStartTime === undefined) player.workStartTime = null; 
 
-            // ✨ [宗師新增] 醫療清洗：確保戰鬥怪物數據不會因為版本更新而缺失
-            if(!monster.defVal) monster.defVal = 0;
-            if(!monster.dr) monster.dr = 0;
-            if(!monster.eva) monster.eva = 0;
-            
-            // ✨ [宗師新增] 醫療清洗：修復血量同步問題
-            player.hp = Math.min(player.hp, getMaxHP());
+            // 7. 戰鬥實體防呆
+            if(!monster || !monster.name) {
+                monster = { id: "", name: "", hp: 0, mhp: 0, atk: 0, lvl: 1, isBoss: false, defVal: 0, dr: 0, eva: 0 };
+            }
 
-        } catch(e) { console.error("Save Parse Error"); }
+        } catch(e) { console.error("Save Parse Error", e); }
     }
-    // ... 後續 initPotionSelect() 等邏輯
+    
+    initPotionSelect();
+    if(!player.name || player.name === "") { 
+        el('naming-area').classList.remove('hidden'); 
+        resetInitStats();
+        openModal("踏入輪迴", "名號一旦定下，便與靈魂綁定。請確認好您的修行天賦：", "開啟旅程", () => { 
+            let n = el('player-name-input').value.trim(); if(n === "") n = "無名者"; 
+            if(player.statPoints > 0) { el('init-error').style.display = 'block'; return false; }
+            player.name = n; player.str = initAllocatedStats.str; player.vit = initAllocatedStats.vit; player.agi = initAllocatedStats.agi;
+            player.lockedStats = { str: 2, vit: 1, agi: 0 }; el('naming-area').classList.add('hidden'); checkSkillUnlocks(); postLoadInit();
+        }); 
+    } else { 
+        checkSkillUnlocks(); 
+        postLoadInit(); 
+    } 
 }
 
 function postLoadInit() { 
     updateMapSelector(); spawn(false); updateUI(); isPaused = false; 
-    log("💡 【V0.4.0】：神啟與血契核心升級，雙層防禦系統上線！", "var(--accent)");
+    log("💡 【V0.4.2】：秘技覺醒與在線契約系統已成功載入！", "var(--accent)");
     if(player.lvl === 1 && player.exp === 0 && player.gold === 0 && player.potions.p1 === 5) log("🎁 新手物資已發放：生鮮野味 x5", "var(--quest)");
     if(player.name === "御雷神命") { let gmCard = el('card-gm'); if(gmCard) gmCard.classList.remove('hidden'); }
     if(currentView === 'battle' && !player.workStartTime) startBattleLoop(); 
@@ -500,12 +544,10 @@ function saveGame(manual) {
     if(manual) log("✔ 靈魂記憶已封存於石碑之中。", "var(--quest)"); 
 }
 
-
 function generateImportCode() {
     saveGame(false);
     let str = JSON.stringify(player);
     let code = btoa(encodeURIComponent(str));
-    
     if(navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(code).then(() => {
             openModal("📤 靈魂引繼", `引繼碼已<b>自動複製</b>到您的剪貼簿！<br><small style="color:var(--quest);">您可以直接去別處貼上了。</small><br><textarea readonly style="width:90%;height:80px;font-size:10px;background:#000;color:var(--gold);margin-top:10px;padding:8px;border:1px solid var(--cherry);border-radius:5px;" onclick="this.select()">${code}</textarea>`, "了解");
@@ -523,7 +565,6 @@ function promptImportCode() {
     try {
         let decoded = decodeURIComponent(atob(code));
         let d = JSON.parse(decoded);
-        
         if(d && d.name !== undefined) {
             let info = `確定要繼承此靈魂紀錄嗎？<br><br><div style="background:#111; padding:15px; border-radius:8px; border:1px solid var(--gold); text-align:left;">
                 <span style="color:var(--cherry);">角色姓名：</span><b>${d.name || "無名者"}</b><br>
@@ -549,9 +590,14 @@ function logoutGame() { saveGame(false); location.reload(); }
 function checkSkillUnlocks() {
     let newlyUnlocked = false;
     let addSkill = (id) => { if(!player.unlockedSkills.includes(id)) { player.unlockedSkills.push(id); log(`✨ 突破界限！領悟新秘技：【${skillDB[id].name}】`, "var(--quest)"); newlyUnlocked = true; } };
-    if(player.agi >= 5) addSkill('agi_combo1'); if(player.agi >= 10) addSkill('agi_combo2');
-    if(player.vit >= 5) addSkill('vit_strike'); if(player.vit >= 15) addSkill('vit_thorns');
+    
+    // B方案：屬性覺醒
+    if(player.agi >= 5) addSkill('agi_combo1'); 
+    if(player.agi >= 10) addSkill('agi_combo2');
+    if(player.vit >= 5) addSkill('vit_strike'); 
+    if(player.vit >= 15) addSkill('vit_thorns');
     if(player.str >= 15) addSkill('str_cleave');
+    
     if(newlyUnlocked && !isPaused) updateUI();
 }
 
@@ -590,28 +636,27 @@ function autoHealLogic(onlySearch = false) {
     }
 }
 
-// 🎯 V0.4.0 屬性獲取公式
 function getAtkVal() { 
     let base = Math.floor(player.str * 1.5) + ((player.gear.arms || 0) * 3); 
-    if (player.helper && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].passive) {
+    if (player.helper && player.helper.id && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].passive) {
         base += HELPER_DB[player.helper.id].passive(player).atk || 0;
     }
     return base;
 }
+
 function getDefPercent(vit) { 
     let base = vit <= 100 ? vit * 0.5 : vit <= 300 ? 50 + (vit - 100) * 0.1 : 70 + (vit - 300) * 0.05; 
-    // 保留您原本設定的胴甲 * 1.5
     let total = base + ((player.gear.body || 0) * 1.5);
-    if (player.helper && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].passive) {
+    if (player.helper && player.helper.id && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].passive) {
         total += HELPER_DB[player.helper.id].passive(player).def || 0;
     }
     return Math.min(90, total); 
 }
+
 function getEvaPercent(agi) { 
     let base = agi <= 50 ? agi * 0.6 : 30 + (agi - 50) * 0.2; 
-    // 保留您原本設定的足具 * 1.0
     let total = base + ((player.gear.legs || 0) * 1.0);
-    if (player.helper && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].passive) {
+    if (player.helper && player.helper.id && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].passive) {
         total += HELPER_DB[player.helper.id].passive(player).eva || 0;
     }
     return Math.min(70, total);
@@ -623,7 +668,6 @@ function executeSkill(slotIdx) {
     if(player.mapIdx !== 0 && monster.hp <= 0) return false; 
     let sk = skillDB[sid]; combatState.skillCds[slotIdx] = sk.cd; let baseDmg = getAtkVal(); let isDummy = player.mapIdx === 0;
     
-    // 技能傷害套用雙層防禦 (如果打在實體怪身上)
     let finalDmg = 0;
     if(sid === 'vit_strike') { 
         let d = baseDmg + (player.vit * 2); 
@@ -639,7 +683,7 @@ function executeSkill(slotIdx) {
         let d = Math.floor(baseDmg * 2.5); 
         if(isDummy) { finalDmg = d; } else {
             let mDefVal = monster.defVal || 0; 
-            let mDr = Math.max(0, (monster.dr || 0) - 0.15); // 破甲效果
+            let mDr = Math.max(0, (monster.dr || 0) - 0.15);
             finalDmg = Math.max(1, (d - mDefVal)) * (1 - mDr);
         }
         finalDmg = Math.floor(finalDmg);
@@ -661,7 +705,7 @@ function checkGambit(idx) {
     return false;
 }
 
-// ⚔️ 核心戰鬥迴圈 (雙層防禦、命中/閃避判定、神道秒回)
+// ⚔️ 核心戰鬥迴圈 (✨ 修正了括號位置與扣秒邏輯)
 function startBattleLoop() {
     if(battleTimer) clearTimeout(battleTimer); 
     if(isPaused || currentView !== 'battle' || isReviving) return;
@@ -675,7 +719,17 @@ function startBattleLoop() {
     for(let i=0; i<4; i++) if(combatState.skillCds[i] > 0) combatState.skillCds[i] = Math.max(0, combatState.skillCds[i] - tickSec);
     if(combatState.potionCd > 0) combatState.potionCd = Math.max(0, combatState.potionCd - tickSec);
 
-    // 戰鬥秒回邏輯 (神道流地基)
+    // ✨ [核心改動] 夥伴在線扣秒
+    if (player.helper && player.helper.id && player.helper.remainSec > 0) {
+        player.helper.remainSec = Math.max(0, player.helper.remainSec - tickSec);
+        if (player.helper.remainSec <= 0) {
+            log(`⛩️ ${HELPER_DB[player.helper.id].name} 的合約已到期，離隊了。`, "var(--cherry)");
+            player.helper.id = null;
+            updateUI();
+        }
+    }
+
+    // 戰鬥秒回邏輯
     if (player.hp < getMaxHP()) {
         let regen = (getMaxHP() * 0.005) + (player.vit * 0.2); 
         player.hp = Math.min(getMaxHP(), player.hp + (regen * tickSec));
@@ -688,7 +742,7 @@ function startBattleLoop() {
     }
 
     let baseAtk = getAtkVal(); 
-    let isCrit = false; // 保留供未來技能使用
+    let isCrit = false;
     let skillUsed = false;
     
     if(!isDummy ? monster.hp > 0 : true) {
@@ -722,11 +776,11 @@ function startBattleLoop() {
 
                 if (isDummy) {
                     combatState.zenDmgAccum += finalDmg; 
-                    setTimeout(()=>showDmg('m-box', finalDmg + (isCrit?"!!":""), isCrit?'orange':'white'), i*150);
+                    setTimeout(()=>showDmg('m-box', finalDmg, 'white'), i*150);
                 } else if(monster.hp > 0) {
                     monster.hp -= finalDmg;
                     if(mDefVal > currentAtk && Math.random() < 0.2) log(`🛡️ 怪物護甲極厚，攻擊如同刮痧。`, "#666");
-                    setTimeout(()=>showDmg('m-box', finalDmg + (isCrit?"!!":""), isCrit?'orange':'white'), i*150);
+                    setTimeout(()=>showDmg('m-box', finalDmg, 'white'), i*150);
                 }
             } else {
                 setTimeout(()=>showDmg('m-box', "MISS", '#888'), i*150);
@@ -735,7 +789,7 @@ function startBattleLoop() {
     }
 
     // 🏮 夥伴主動技能邏輯
-    if(player.helper && HELPER_DB[player.helper.id]) {
+    if(player.helper && player.helper.id && HELPER_DB[player.helper.id]) {
         let hdb = HELPER_DB[player.helper.id];
         if(!combatState.helperSkillCd) combatState.helperSkillCd = hdb.skillCd;
         combatState.helperSkillCd -= tickSec;
@@ -825,16 +879,6 @@ function handleVictory() {
         if(player.mapIdx == player.maxMapIdx && player.kills < 10) player.kills++;
     }
     checkLevelUp(); 
-    
-    // 🏮 扣除夥伴場次
-    if (player.mapIdx !== 0 && player.helper && player.helper.left > 0) {
-        player.helper.left--;
-        if (player.helper.left === 0) {
-            log(`⛩️ ${HELPER_DB[player.helper.id].name} 的合約已到期，轉身離開了。`, "var(--cherry)");
-            player.helper = null;
-        }
-    }
-    
     spawn();
 }
 
@@ -856,7 +900,6 @@ function checkLevelUp() {
     while(player.exp >= player.next) { 
         player.lvl++; 
         player.exp -= player.next; 
-        // 宗師優化：改用階梯式增長，Lv.20 前較快，Lv.20 後平穩
         let growth = player.lvl < 20 ? 1.2 : 1.1; 
         player.next = Math.floor(player.next * growth) + (player.lvl * 5); 
         player.statPoints += 3; 
@@ -871,7 +914,6 @@ function spawn(boss = false) {
     combatState.mobAtkTimer = 2.0; 
     let mobId = "";
     
-    // 生成邏輯：判斷是木樁、BOSS還是小怪
     if(m.name === "[修行] 幽靜道場") { 
         mobId = "m_dummy"; 
     } else if (boss && m.boss) { 
@@ -887,30 +929,14 @@ function spawn(boss = false) {
     
     let dbMob = MOB_DB[mobId]; 
     if(dbMob) {
-        // --- 宗師級：自動等級逆推公式 ---
-        let calcHP = dbMob.hp / 15;
-        let calcATK = dbMob.atk * 2.2;
-        let calcDEF = (dbMob.defVal || 0) * 3.5;
-        let calcEVA = (dbMob.eva || 0) * 1.5;
+        let calcHP = dbMob.hp / 15; let calcATK = dbMob.atk * 2.2; let calcDEF = (dbMob.defVal || 0) * 3.5; let calcEVA = (dbMob.eva || 0) * 1.5;
         let autoLvl = Math.max(1, Math.ceil((calcHP + calcATK + calcDEF + calcEVA) / 10));
-
         monster = { 
-            id: mobId, 
-            name: dbMob.name, 
-            hp: dbMob.hp, 
-            mhp: dbMob.hp, 
-            atk: dbMob.atk, 
-            defVal: dbMob.defVal || 0, // 防禦定值
-            dr: dbMob.dr || 0,         // 減傷率
-            eva: dbMob.eva || 0,       // 閃避率
-            lvl: autoLvl,              // 自動生成的等級
-            isBoss: dbMob.isBoss || false 
+            id: mobId, name: dbMob.name, hp: dbMob.hp, mhp: dbMob.hp, atk: dbMob.atk, 
+            defVal: dbMob.defVal || 0, dr: dbMob.dr || 0, eva: dbMob.eva || 0, lvl: autoLvl, isBoss: dbMob.isBoss || false 
         };
     }
-    
-    // BOSS挑戰按鈕狀態更新
-    let btn = el('btn-boss'); 
-    if(btn) btn.disabled = (player.kills < 10 || monster.isBoss || isReviving || !m.boss);
+    let btn = el('btn-boss'); if(btn) btn.disabled = (player.kills < 10 || monster.isBoss || isReviving || !m.boss);
 }
 
 function getMaxHP() { return player.vit * 50 + 50; }
@@ -929,13 +955,11 @@ function updateMapSelector() {
         else { 
             let penaltyTxt = player.lvl > m.maxLvl ? `<span style="color:var(--danger); font-weight:bold;"> (經驗衰減)</span>` : ""; 
             let lvlLimitTxt = m.maxLvl === 999 ? "MAX" : m.maxLvl; 
-            
             let dropSet = new Set();
             if(m.mobs) m.mobs.forEach(mobId => MOB_DB[mobId].drops.forEach(d => dropSet.add(getItem(d.id).name)));
             if(m.boss) MOB_DB[m.boss].drops.forEach(d => dropSet.add(getItem(d.id).name));
             if(m.rareMob) MOB_DB[m.rareMob.id].drops.forEach(d => dropSet.add(getItem(d.id).name));
             let dropStr = Array.from(dropSet).join("、 ") || "無";
-
             mInfo.innerHTML = `適合等級: ${m.minLvl}~${lvlLimitTxt}${penaltyTxt}<br>報酬: <span style="color:var(--quest);">${dropStr}</span>`; 
         }
     }
@@ -961,6 +985,14 @@ function switchLogTab(type) {
 
 function setInvFilter(cat) { currentInvFilter = cat; document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active')); el(`fb-${cat}`).classList.add('active'); renderBag(); }
 
+// ✨ 秘技過濾器 (V0.4.2)
+function setSkillFilter(cat) {
+    currentSkillFilter = cat;
+    document.querySelectorAll('#skill-area .f-btn').forEach(b => b.classList.remove('active'));
+    el(`sb-${cat}`).classList.add('active');
+    renderPath();
+}
+
 function renderBag() {
     const listEl = el('inv-list'); if(!listEl) return; listEl.innerHTML = "";
     let bagItems = [];
@@ -974,26 +1006,10 @@ function renderBag() {
         let db = getItem(slot.id);
         let checkHtml = db.sellable ? `<input type="checkbox" class="bag-check" data-id="${slot.id}">` : `<div style="width:16px;"></div>`;
         let qtyInputHtml = db.sellable ? `<input type="number" class="bag-qty-input" data-id="${slot.id}" value="1" min="1" max="${slot.count}">` : `<span style="color:#444; font-size:12px;">-</span>`;
-
-        listEl.innerHTML += `
-        <div class="inv-row ${db.cat}">
-            ${checkHtml}
-            <div style="flex:1; margin-left:10px;">
-                <div style="color:#eee; font-size:1.05em;">${db.name} <b style="color:var(--gold)">x${slot.count}</b></div>
-                <div style="color:#666; font-size:0.85em;">單價: $${db.sellPrice}</div>
-            </div>
-            <div style="text-align:right; display:flex; align-items:center; gap:5px;">
-                <span style="font-size:12px; color:#555;">賣出數量:</span>
-                ${qtyInputHtml}
-            </div>
-        </div>`;
+        listEl.innerHTML += `<div class="inv-row ${db.cat}">${checkHtml}<div style="flex:1; margin-left:10px;"><div style="color:#eee; font-size:1.05em;">${db.name} <b style="color:var(--gold)">x${slot.count}</b></div><div style="color:#666; font-size:0.85em;">單價: $${db.sellPrice}</div></div><div style="text-align:right; display:flex; align-items:center; gap:5px;"><span style="font-size:12px; color:#555;">賣出數量:</span>${qtyInputHtml}</div></div>`;
     });
 
-    listEl.innerHTML += `
-        <div style="position: sticky; bottom: 0; background: #000; padding: 12px 0; border-top: 1px solid #333; margin-top: 10px; text-align:center;">
-            <button class="btn-action" style="width:90%; background:linear-gradient(180deg, #ffd700, #b8860b); color:#000; border-radius:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5); font-size:1em;" 
-            onclick="executeSelectedSell()">💰 賣出選中物品</button>
-        </div>`;
+    listEl.innerHTML += `<div style="position: sticky; bottom: 0; background: #000; padding: 12px 0; border-top: 1px solid #333; margin-top: 10px; text-align:center;"><button class="btn-action" style="width:90%; background:linear-gradient(180deg, #ffd700, #b8860b); color:#000; border-radius:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5); font-size:1em;" onclick="executeSelectedSell()">💰 賣出選中物品</button></div>`;
 }
 
 function executeSelectedSell() {
@@ -1011,12 +1027,21 @@ function executeSelectedSell() {
     if(totalEarned > 0) { player.gold += totalEarned; log(`💰 變賣清單：${soldSummary.join(", ")}，共入帳 ${totalEarned} 金幣！`, "var(--gold)"); updateUI(); renderBag(); }
 }
 
+// ✨ 宗師改建：含 Filter 功能的 renderPath
 function renderPath() {
-    const c = el('skill-area'); if(!c) return;
-    let html = `<p style="font-size:1.05em; color:var(--gold); margin:5px 0; border-bottom:1px solid #333; padding-bottom:5px;">已領悟的秘技：</p><div style="display:flex; flex-direction:column; gap:8px; text-align:left;">`;
-    if(!player.unlockedSkills || player.unlockedSkills.length === 0) { html += `<div style="color:#666; text-align:center; padding: 20px;">尚無領悟任何秘技...</div>`; 
+    const c = el('skill-list-content'); if(!c) return;
+    
+    // 過濾邏輯
+    let filteredSkills = player.unlockedSkills.filter(sid => {
+        if(currentSkillFilter === 'all') return true;
+        return (skillDB[sid] && skillDB[sid].cat === currentSkillFilter);
+    });
+
+    let html = `<div style="display:flex; flex-direction:column; gap:8px; text-align:left;">`;
+    if(filteredSkills.length === 0) { 
+        html += `<div style="color:#666; text-align:center; padding: 20px;">尚無此類別的秘技...</div>`; 
     } else {
-        player.unlockedSkills.forEach(sid => {
+        filteredSkills.forEach(sid => {
             let sk = skillDB[sid]; let isEqIdx = player.equippedSkills.indexOf(sid); let isEq = isEqIdx !== -1;
             let btnAction = isEq ? `unequipSkill(${isEqIdx})` : `equipSkill('${sid}')`; let btnText = isEq ? '卸下' : '裝備';
             let btnColor = isEq ? 'var(--danger)' : 'var(--quest)'; let btnFontColor = isEq ? '#fff' : '#000';
@@ -1048,18 +1073,20 @@ function renderPath() {
 // ⛩️ 渲染夥伴分頁
 function renderHelper() {
     const c = el('helper-area'); if(!c) return;
-    if(!player.helper || !HELPER_DB[player.helper.id]) {
+    if(!player.helper || !player.helper.id || !HELPER_DB[player.helper.id]) {
         c.innerHTML = `<div style="text-align:center; color:#666; padding:30px; line-height:1.6;">身邊空無一物...<br><br>請前往結界之里的【居酒屋】尋找結契的夥伴。</div>`;
         return;
     }
     let hdb = HELPER_DB[player.helper.id];
-    let leftTxt = player.helper.left === -1 ? '<span style="color:var(--quest); font-weight:bold;">永久結契</span>' : `<span style="color:var(--danger); font-weight:bold;">剩餘 ${player.helper.left} 場</span>`;
+    let timeStr = formatHelperTime(player.helper.remainSec);
+    let leftTxt = `<span style="color:${player.helper.remainSec < 60 ? 'var(--danger)' : 'var(--quest)'}; font-weight:bold;">${timeStr}</span>`;
+    
     c.innerHTML = `
         <div style="background:#1a1a2e; border:1px solid #fdcb6e; border-radius:8px; padding:20px; text-align:center; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
             <h3 style="color:#fdcb6e; margin-top:0; font-size:1.3em;">⛩️ ${hdb.name}</h3>
             <p style="color:#aaa; font-size:1em; margin: 15px 0;">${hdb.desc}</p>
-            <div style="margin-top:20px; font-size:1.1em; background:#000; padding:10px; border-radius:5px; border:1px solid #333;">合約狀態：${leftTxt}</div>
-            <div style="margin-top:15px; font-size:0.85em; color:#666;">夥伴會自動在戰鬥中施放技能，並提供被動加成。<br>※道場冥想不消耗場次。</div>
+            <div style="margin-top:20px; font-size:1.1em; background:#000; padding:10px; border-radius:5px; border:1px solid #333;">在線合約剩餘：${leftTxt}</div>
+            <div style="margin-top:15px; font-size:0.85em; color:#666;">只要在此世界活動(不含休息/離線)，時間便會流逝。</div>
         </div>
     `;
 }
@@ -1074,6 +1101,17 @@ function equipSkill(sid) {
     } else { openModal("槽位已滿", "4個技能槽已滿，請先卸下其他技能。", "知道了"); } 
 }
 function unequipSkill(idx) { player.equippedSkills[idx] = null; player.skillGambits[idx] = 0; combatState.skillCds[idx] = 0; renderPath(); updateUI(); log("📜 已卸下秘技。", "#aaa"); saveGame(false); }
+
+function updateStatHints() {
+    const hintEl = el('stat-hint');
+    if (!hintEl) return;
+    let nextHint = "";
+    if (player.str < 15) nextHint = "【武道】力量達 15 可感悟破甲重劈...";
+    else if (player.agi < 10) nextHint = "【身法】敏捷達 10 可感悟殘影...";
+    else if (player.vit < 15) nextHint = "【內息】體質達 15 可感悟震怒...";
+    else nextHint = "已掌握目前境界所有基礎招式。";
+    hintEl.innerText = nextHint;
+}
 
 function updateUI() {
     if(el('p-name')) el('p-name').innerText = player.name || "無名者"; if(el('p-display-name')) el('p-display-name').innerText = player.name || "無名者"; if(el('p-lvl')) el('p-lvl').innerText = player.lvl; if(el('p-gold')) el('p-gold').innerText = player.gold.toLocaleString();
@@ -1108,13 +1146,16 @@ function updateUI() {
         if(mHpText) mHpText.innerText = `${Math.floor(monster.hp)} / ${monster.mhp}`; if(mSubInfo) mSubInfo.innerHTML = `Lv. ${monster.lvl}`;
     }
 
-    // 🏮 更新戰鬥畫面的夥伴顯示
+    // ✨ 夥伴時間 UI 顯示
     let hInfo = el('helper-info');
     if(hInfo) { 
-        if(player.helper && HELPER_DB[player.helper.id]) {
-            let leftTxt = player.helper.left === -1 ? '永久' : `剩餘 ${player.helper.left} 場`;
-            hInfo.innerText = `⛩️ 夥伴：${HELPER_DB[player.helper.id].name} (${leftTxt})`; 
-        } else { hInfo.innerText = ""; } 
+        if(player.helper && player.helper.id && HELPER_DB[player.helper.id]) {
+            let timeStr = formatHelperTime(player.helper.remainSec);
+            hInfo.innerText = `⛩️ 夥伴：${HELPER_DB[player.helper.id].name} (在線剩餘 ${timeStr})`; 
+            hInfo.style.color = player.helper.remainSec < 60 ? "var(--danger)" : "#fdcb6e";
+        } else { 
+            hInfo.innerText = ""; 
+        } 
     }
     
     document.querySelectorAll('.btn-plus').forEach(b => b.disabled = (player.statPoints <= 0 || isReviving));
@@ -1142,14 +1183,10 @@ function updateUI() {
         }
     }
     
-    if(currentLogTab === 'inv') {
-        const activeEl = document.activeElement; const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT');
-        if(!isEditing) renderBag();
-    }
-    if(currentLogTab === 'skill') {
-        const activeEl = document.activeElement; const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT');
-        if(!isEditing) renderPath();
-    }
+    updateStatHints(); // ✨ 更新 B方案提示
+
+    if(currentLogTab === 'inv') { const activeEl = document.activeElement; const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT'); if(!isEditing) renderBag(); }
+    if(currentLogTab === 'skill') { const activeEl = document.activeElement; const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT'); if(!isEditing) renderPath(); }
     if(currentLogTab === 'helper') renderHelper();
 }
 
@@ -1183,8 +1220,7 @@ function stopWork() {
     let now = Date.now();
     let hourlyRate = 1200 + (player.lvl * 100);
     
-    // 結算夥伴加成 (資料驅動)
-    if (player.helper && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].workBonus) {
+    if (player.helper && player.helper.id && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].workBonus) {
         hourlyRate *= HELPER_DB[player.helper.id].workBonus.rate;
     }
 
@@ -1217,49 +1253,37 @@ function showSubView(s) {
     else if(s==='smith') { renderSmithy(); } 
     else if(s==='smith_sell') { renderSmithySell(); }
     else if(s==='izakaya') {
-        // 取得目前夥伴名稱（如有）
-        let helperName = (player.helper && HELPER_DB[player.helper.id]) ? HELPER_DB[player.helper.id].name : "尚未結契";
+        let helperName = (player.helper && player.helper.id && HELPER_DB[player.helper.id]) ? HELPER_DB[player.helper.id].name : "尚未結契";
         
         c.innerHTML = `
             <h3>🏮 居酒屋「宵月」</h3>
             <p style="color:#ffb7c5; font-style:italic; margin-bottom:20px;">
                 老闆娘：「哎呀，又是你呀？今晚想喝點什麼，還是想找幾個可靠的伴出發呢？」
             </p>
-            
             <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; margin-bottom:15px; display:flex; justify-content:space-between; font-size:0.9em; border:1px solid #333;">
                 <span>💰 持有金幣：<b style="color:var(--gold);">${player.gold.toLocaleString()}</b></span>
                 <span>⛩️ 目前夥伴：<b style="color:#fdcb6e;">${helperName}</b></span>
             </div>
-
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                 <div class="slot-card" style="width:auto; margin:0; border-color:#fdcb6e;" onclick="showSubView('helper_shop')">
                     <h3 style="color:#fdcb6e; margin:5px 0;">🤝 夥伴結契</h3>
                     <p style="margin:0; font-size:0.8em; color:#aaa;">尋找共戰的隊友</p>
                 </div>
-                
                 <div class="slot-card" style="width:auto; margin:0; border-color:var(--gold);" onclick="showSubView('work')">
                     <h3 style="color:var(--gold); margin:5px 0;">🧹 居酒屋打工</h3>
                     <p style="margin:0; font-size:0.8em; color:#aaa;">勞動換取修行金</p>
                 </div>
-
-                <div class="slot-card" style="width:auto; margin:0; border-color:#888; opacity:0.6; cursor:not-allowed;">
-                    <h3 style="color:#888; margin:5px 0;">📜 傳聞打探</h3>
-                    <p style="margin:0; font-size:0.8em; color:#666;">(後續開放內容)</p>
-                </div>
             </div>
         `;
     }
-    else if(s==='helper_shop') {
-        renderIzakaya('helper'); 
-    }
+    else if(s==='helper_shop') { renderIzakaya('helper'); }
     else if(s==='work') {
         let now = Date.now();
         let baseRate = 1200 + (player.lvl * 100);
         let finalRate = baseRate;
         let bonusTxt = "";
         
-        // 夥伴加成計算 (動態讀取)
-        if (player.helper && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].workBonus) {
+        if (player.helper && player.helper.id && HELPER_DB[player.helper.id] && HELPER_DB[player.helper.id].workBonus) {
             let bonus = HELPER_DB[player.helper.id].workBonus;
             finalRate = Math.floor(baseRate * bonus.rate);
             if (bonus.rate > 1.0) bonusTxt = `<br><small style='color:var(--quest);'>✨ 夥伴加成：${bonus.label}</small>`;
@@ -1268,25 +1292,11 @@ function showSubView(s) {
         c.innerHTML = `<h3>🧹 居酒屋勤務</h3><p style="color:#aaa;">目前的時薪為 $${finalRate}${bonusTxt}</p>`;
         
         if (!player.workStartTime) {
-            c.innerHTML += `
-                <div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:8px; border:1px solid #444; margin-top:15px;">
-                    <p>老闆：「現在剛好缺人手，要來幫忙嗎？」</p>
-                    <button class="btn-action" style="width:100%; background:var(--gold); color:black;" onclick="startWork()">開始幫忙</button>
-                </div>
-                <button class="btn-action" style="width:100%; margin-top:15px; background:#444; color:white;" onclick="showSubView('izakaya')">返回居酒屋</button>
-            `;
+            c.innerHTML += `<div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:8px; border:1px solid #444; margin-top:15px;"><p>老闆：「現在剛好缺人手，要來幫忙嗎？」</p><button class="btn-action" style="width:100%; background:var(--gold); color:black;" onclick="startWork()">開始幫忙</button></div><button class="btn-action" style="width:100%; margin-top:15px; background:#444; color:white;" onclick="showSubView('izakaya')">返回居酒屋</button>`;
         } else {
             let elapsedSecs = Math.floor((now - player.workStartTime) / 1000);
             let earn = Math.floor((elapsedSecs / 3600) * finalRate);
-            c.innerHTML += `
-                <div style="background:rgba(255,184,0,0.1); padding:20px; border-radius:8px; border:1px solid var(--gold); margin-top:15px;">
-                    <p style="color:var(--gold);">🍺 努力工作中...</p>
-                    <p>已持續: ${Math.floor(elapsedSecs/60)} 分鐘</p>
-                    <p>累積工錢：<span style="font-size:1.4em; font-weight:bold;">$${earn}</span></p>
-                    <button class="btn-action" style="width:100%; background:var(--danger); color:white; margin-top:10px;" onclick="stopWork()">領工錢並收工</button>
-                </div>
-                <p style="font-size:0.8em; color:#666; margin-top:15px;">※ 打工期間無法離開居酒屋或參與戰鬥。</p>
-            `;
+            c.innerHTML += `<div style="background:rgba(255,184,0,0.1); padding:20px; border-radius:8px; border:1px solid var(--gold); margin-top:15px;"><p style="color:var(--gold);">🍺 努力工作中...</p><p>已持續: ${Math.floor(elapsedSecs/60)} 分鐘</p><p>累積工錢：<span style="font-size:1.4em; font-weight:bold;">$${earn}</span></p><button class="btn-action" style="width:100%; background:var(--danger); color:white; margin-top:10px;" onclick="stopWork()">領工錢並收工</button></div>`;
         }
     }
     else if(s==='gm') {
@@ -1314,7 +1324,6 @@ function showSubView(s) {
 
 function renderIzakaya(tab = 'helper') {
     const c = el('sub-content'); if(!c) return; 
-    
     let contentHtml = "";
     Object.values(HELPER_DB).forEach(h => {
         let isHired = player.helper && player.helper.id === h.id;
@@ -1326,7 +1335,7 @@ function renderIzakaya(tab = 'helper') {
                 <div style="flex:1;">
                     <b style="color:#fdcb6e;">${h.name}</b> ${bonusLabel}<br>
                     <small style="color:#aaa; display:block; margin:5px 0;">${h.desc}</small>
-                    <small style="color:var(--cherry);">契約長度：${h.duration} 場戰鬥</small>
+                    <small style="color:var(--cherry);">在線合約：${h.duration} 分鐘</small>
                 </div>
                 <button class="btn-action" 
                         style="background:${canAfford ? 'var(--quest)' : '#444'}; color:${canAfford ? 'black' : '#888'};" 
@@ -1344,24 +1353,24 @@ function renderIzakaya(tab = 'helper') {
     `;
 }
 
-
+// ✨ 夥伴在線招募邏輯
 function hireHelper(id) { 
     let h = HELPER_DB[id]; 
     if(player.gold >= h.cost) { 
         player.gold -= h.cost; 
-        
+        let buySec = h.duration * 60; // 分鐘轉秒數
+
         if (player.helper && player.helper.id === id) {
-            player.helper.left += h.duration;
-            log(`🍶 續約成功！${h.name} 的合約場次增加了 ${h.duration} 場。`, "#fdcb6e"); 
+            player.helper.remainSec += buySec;
+            log(`🍶 續約成功！${h.name} 的在線時長增加了 ${h.duration} 分鐘。`, "#fdcb6e"); 
         } else {
-            player.helper = { id: id, left: h.duration }; 
-            log(`🍶 成功與 ${h.name} 簽訂了結契！`, "#fdcb6e"); 
+            player.helper = { id: id, remainSec: buySec }; 
+            log(`🍶 成功與 ${h.name} 簽訂結契！`, "#fdcb6e"); 
         }
-        
         updateUI(); 
         renderIzakaya('helper'); 
     } else { 
-        openModal("金幣不足", "老闆娘：錢不夠啊，小哥。去外面多打點怪吧！", "抱歉"); 
+        openModal("金幣不足", "老闆娘：錢不夠啊，小哥。", "抱歉"); 
     } 
 }
 
@@ -1397,7 +1406,6 @@ function renderSmithy() {
     let statusPanel = `<div style="background:rgba(0,0,0,0.5); padding:12px; border-radius:10px; border:1px solid #444; margin-bottom:15px; font-size:0.85em; line-height:1.6;"><h4 style="margin:0 0 8px 0; color:var(--gold); text-align:center;">✨ 目前靈脈總成</h4><div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; text-align:center;"><div><span style="color:#aaa;">攻擊威力</span><br><b style="color:white;">${baseAtk}</b><br><small style="color:#888;">(${pureAtk} <span style="color:lime;">+${gearAtk}</span>)</small></div><div><span style="color:#aaa;">減傷</span><br><b style="color:white;">${totalDef}%</b><br><small style="color:#888;">(${baseDef}% <span style="color:lime;">+${gearDef}%</span>)</small></div><div><span style="color:#aaa;">閃避機率</span><br><b style="color:white;">${totalEva}%</b><br><small style="color:#888;">(${baseEva}% <span style="color:lime;">+${gearEva}%</span>)</small></div></div></div>`;
     let invHtml = `<div style="text-align:left; font-size:0.85em; color:#aaa; margin-bottom:15px; padding:0 5px;"><span style="color:var(--gold);">💰 金幣: ${player.gold.toLocaleString()}</span> | <span style="color:#aaa;">⚙️ ${getItem('m0').name}: ${player.mats.m0 || 0}</span><br>🌿 ${getItem('m1').name}: ${player.mats.m1 || 0} | 🪵 ${getItem('m2').name}: ${player.mats.m2 || 0} | ☂️ ${getItem('m3').name}: ${player.mats.m3 || 0} | ⚡ ${getItem('m4').name}: ${player.mats.m4 || 0}</div>`;
     
-    // 宗師筆記：保留您原本鍛造屋各部位的給予數值
     let gears = [ { id: 'arms', name: '臂甲', effName: '攻擊威力', unit: '', step: 3 }, { id: 'body', name: '胴甲', effName: '減傷', unit: '%', step: 1.5 }, { id: 'legs', name: '足具', effName: '閃避機率', unit: '%', step: 1.0 } ];
     
     let upgradeHtml = gears.map(g => {
@@ -1450,7 +1458,6 @@ function updateShopInvDisplay() {
     inv.innerHTML = formattedHtml;
 }
 function backToVillage() { 
-    // 🔒 宗師防呆鎖定：打工中按下返回無效
     if (player.workStartTime) {
         log("📢 老闆：工還沒做完想溜啊？點擊紅色的收工按鈕才能走！", "var(--danger)");
         return; 
@@ -1475,14 +1482,12 @@ function openModal(t,b,bt,cb,showCancel=false) {
 window.onload = () => { 
     initSlotScreen(); 
     
-    // 原本的 5 秒存檔機制
     setInterval(() => { 
         if(!isPaused && currentSlotKey && player.name && !player.workStartTime) {
             saveGame(false); 
         }
     }, 5000); 
 
-    // ✨ 新增的 1 秒時鐘：只要在打工畫面，每秒更新一次創造跳錢效果
     setInterval(() => {
         if (player.workStartTime && currentView === 'village' && !el('sub-view').classList.contains('hidden')) {
             showSubView('work'); 
