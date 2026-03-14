@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>永夜之境：宗師歸來 V0.4.2 (秘技覺醒與在線契約版)</title>
+    <title>永夜之境：宗師歸來 V0.4.3 (自動戰略與屬性共鳴版)</title>
     <style>
         :root { --bg: #0a0a0f; --panel: #161622; --gold: #ffd700; --cherry: #ffb7c5; --accent: #70a1ff; --quest: #55efc4; --danger: #ff4757; --gm: #00cec9; --mat: #e1b12c; --skill: #9b59b6; --passive: #f39c12; }
         body { background: var(--bg); color: #e0e0e0; font-family: 'PingFang TC', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 0; margin: 0; overflow-x: hidden; }
@@ -33,6 +33,14 @@
         .prep-area { background: rgba(0,0,0,0.4); border: 1px solid #444; border-radius: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 0.9em; }
         .prep-controls { display: flex; align-items: center; gap: 10px; }
         
+        /* ✨ 新增：剩餘點數呼吸燈效果 */
+        @keyframes pointGlow { 
+            0% { color: var(--gold); text-shadow: 0 0 5px var(--gold); } 
+            50% { color: #fff; text-shadow: 0 0 20px var(--gold), 0 0 30px var(--gold); transform: scale(1.1); } 
+            100% { color: var(--gold); text-shadow: 0 0 5px var(--gold); } 
+        }
+        .glow-pts { animation: pointGlow 2s infinite ease-in-out; display: inline-block; }
+
         .stat-alloc-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-top: 10px; }
         .stat-row { text-align: center; }
         .stat-label { font-size: 0.8em; color: #aaa; margin-bottom: 5px; }
@@ -70,9 +78,11 @@
         .skill-slot.empty:hover { border-color: var(--quest); color: var(--quest); }
         .skill-slot:hover.active { background: #222; transform: scale(1.02); }
         .skill-cd-overlay { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.7); color: var(--gold); font-weight: bold; display: flex; align-items: center; justify-content: center; height: 100%; pointer-events: none; transition: height 0.1s linear; font-size:0.9em; }
+        /* ✨ 新增：技能冷卻鎖定遮罩 */
+        .skill-setup-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,71,87,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.5em; pointer-events: none; }
 
         /* 🎒 背包、Log與秘技 (四個分頁調整) */
-        .log-inv-tabs { display: flex; gap: 5px; margin-top: 15px; border-bottom: 2px solid #333; }
+        .log-inv-tabs { display: flex; gap: 5px; margin-top: 5px; border-bottom: 2px solid #333; }
         .li-tab { flex:1; text-align:center; padding: 10px 2px; font-size: 0.9em; background: #111; color: #666; cursor: pointer; border-radius: 5px 5px 0 0; border: 1px solid transparent; border-bottom: none; margin-bottom: -2px; z-index: 10; font-weight: bold; }
         .li-tab.active { background: #000; color: var(--gold); border-color: #333; }
         .li-content-box { height: 220px; overflow-y: auto; background: #000; padding: 12px; border-radius: 0 5px 5px 5px; border: 1px solid #333; font-size: 14px; color: #888; }
@@ -133,7 +143,7 @@
 <div id="slot-screen">
     <div style="text-align: center; margin-bottom: 30px;">
         <h1 style="color:var(--cherry); margin-bottom: 5px;">⛩️ 永夜之境 ⛩️</h1>
-        <small style="color: #666; letter-spacing: 2px;">宗師歸來 V0.4.2 (秘技覺醒與在線契約版)</small>
+        <small style="color: #666; letter-spacing: 2px;">宗師歸來 V0.4.3 (自動戰略與屬性共鳴版)</small>
     </div>
     <div id="slots-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></div>
     <div style="margin-top: 30px; font-size: 0.85em; color: #888; text-align: center; line-height: 1.5;">
@@ -213,49 +223,6 @@
             </div>
         </div>
 
-        <div style="text-align:center; margin-bottom:10px; display:flex; justify-content:center; align-items:center; gap:15px;">
-            <button id="btn-boss" onclick="manualBoss()" disabled class="btn-action" style="background:#ff4757; color:white; padding:8px 20px; font-size:1em;">⚔️ 挑戰 BOSS</button>
-            <label style="color:var(--danger); font-size: 0.95em; cursor: pointer; display:flex; align-items:center; gap:5px;">
-                <input type="checkbox" id="auto-boss-check" onchange="player.autoBoss = this.checked; updateUI();" style="transform:scale(1.2);"> 自動挑戰
-            </label>
-            <span style="color:#aaa; font-size:0.95em; border-left:1px solid #444; padding-left:15px;">🛡️ 御守: <span id="revive-count" style="color:var(--gold);">0</span></span>
-        </div>
-
-        <div class="stat-alloc-grid">
-            <div class="stat-row">
-                <div class="stat-label">力量(STR)</div>
-                <button class="btn-plus" onclick="previewStat('str')">+</button><br>
-                <span id="stat-str" class="stat-val">0</span><span id="pre-str" class="preview-val"></span>
-            </div>
-            <div class="stat-row">
-                <div class="stat-label">體質(VIT)</div>
-                <button class="btn-plus" onclick="previewStat('vit')">+</button><br>
-                <span id="stat-vit" class="stat-val">0</span><span id="pre-vit" class="preview-val"></span>
-            </div>
-            <div class="stat-row">
-                <div class="stat-label">敏捷(AGI)</div>
-                <button class="btn-plus" onclick="previewStat('agi')">+</button><br>
-                <span id="stat-agi" class="stat-val">0</span><span id="pre-agi" class="preview-val"></span>
-            </div>
-        </div>
-        
-        <div id="stat-hint" style="text-align:center; font-size:0.85em; color:var(--accent); margin-top:10px; height:1.2em; font-style:italic;"></div>
-
-        <div id="detailed-stats" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 0.95em; display: flex; justify-content: space-around; color: #aaa; border: 1px solid #333;">
-            <span title="物理傷害 (基礎+裝備+夥伴)">🗡️ <span id="det-atk" style="color:white">0</span></span>
-            <span title="攻擊間隔 (每點AGI增加頻率)">⚡ <span id="det-spd" style="color:white">0</span></span> 
-            <span title="減傷率 (體質+裝備)">🛡️ <span id="det-def" style="color:white">0</span></span> 
-            <span title="閃避機率 (AGI+裝備)">🍃 <span id="det-eva" style="color:white">0</span></span> 
-        </div>
-
-        <div style="text-align:center; margin-top:10px;">
-            <span style="font-size:1em; color:var(--gold);">剩餘點數：<span id="stat-points" style="font-weight:bold; font-size:1.2em;">0</span></span><br>
-            <div id="alloc-btns" class="hidden" style="margin-top:10px; display:flex; justify-content:center; gap:10px;">
-                <button class="btn-action" style="background:#444; color:white; padding:6px 15px; font-size:0.95em;" onclick="cancelPreview()">取消預覽</button>
-                <button class="btn-action" style="background:var(--quest); color:black; padding:6px 15px; font-size:0.95em;" onclick="confirmStats()">確定配點</button>
-            </div>
-        </div>
-
         <div class="log-inv-tabs">
             <div id="tab-log-btn" class="li-tab active" onclick="switchLogTab('log')">📜 日誌</div>
             <div id="tab-inv-btn" class="li-tab" onclick="switchLogTab('inv')">🎒 行囊</div>
@@ -284,6 +251,49 @@
         </div>
 
         <div id="helper-area" class="li-content-box hidden" style="padding:10px;"></div>
+
+        <div style="text-align:center; margin:15px 0 10px 0; display:flex; justify-content:center; align-items:center; gap:15px;">
+            <button id="btn-boss" onclick="manualBoss()" disabled class="btn-action" style="background:#ff4757; color:white; padding:8px 20px; font-size:1em;">⚔️ 挑戰 BOSS</button>
+            <label style="color:var(--danger); font-size: 0.95em; cursor: pointer; display:flex; align-items:center; gap:5px;">
+                <input type="checkbox" id="auto-boss-check" onchange="player.autoBoss = this.checked; updateUI();" style="transform:scale(1.2);"> 自動挑戰
+            </label>
+            <span style="color:#aaa; font-size:0.95em; border-left:1px solid #444; padding-left:15px;">🛡️ 御守: <span id="revive-count" style="color:var(--gold);">0</span></span>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-top: 10px; margin-bottom: 5px; font-size: 0.95em; display: flex; justify-content: space-around; color: #aaa; border: 1px solid #333;">
+            <span title="物理傷害 (基礎+裝備+夥伴)">🗡️ <span id="det-atk" style="color:white">0</span></span>
+            <span title="攻擊間隔 (每點AGI增加頻率)">⚡ <span id="det-spd" style="color:white">0</span></span> 
+            <span title="減傷率 (體質+裝備)">🛡️ <span id="det-def" style="color:white">0</span></span> 
+            <span title="閃避機率 (AGI+裝備)">🍃 <span id="det-eva" style="color:white">0</span></span> 
+        </div>
+
+        <div class="stat-alloc-grid">
+            <div class="stat-row">
+                <div class="stat-label">力量(STR)</div>
+                <button class="btn-plus" onclick="previewStat('str')">+</button><br>
+                <span id="stat-str" class="stat-val">0</span><span id="pre-str" class="preview-val"></span>
+            </div>
+            <div class="stat-row">
+                <div class="stat-label">體質(VIT)</div>
+                <button class="btn-plus" onclick="previewStat('vit')">+</button><br>
+                <span id="stat-vit" class="stat-val">0</span><span id="pre-vit" class="preview-val"></span>
+            </div>
+            <div class="stat-row">
+                <div class="stat-label">敏捷(AGI)</div>
+                <button class="btn-plus" onclick="previewStat('agi')">+</button><br>
+                <span id="stat-agi" class="stat-val">0</span><span id="pre-agi" class="preview-val"></span>
+            </div>
+        </div>
+        
+        <div id="stat-hint" style="text-align:center; font-size:0.85em; color:var(--accent); margin-top:10px; height:1.2em; font-style:italic;"></div>
+
+        <div style="text-align:center; margin-top:10px;">
+            <span style="font-size:1em; color:var(--gold);">剩餘點數：<span id="stat-points" style="font-weight:bold; font-size:1.2em;">0</span></span><br>
+            <div id="alloc-btns" class="hidden" style="margin-top:10px; display:flex; justify-content:center; gap:10px;">
+                <button class="btn-action" style="background:#444; color:white; padding:6px 15px; font-size:0.95em;" onclick="cancelPreview()">取消預覽</button>
+                <button class="btn-action" style="background:var(--quest); color:black; padding:6px 15px; font-size:0.95em;" onclick="confirmStats()">確定配點</button>
+            </div>
+        </div>
     </div>
 
     <div id="view-village" class="view-content hidden">
@@ -345,7 +355,7 @@ const ITEM_DB = {
 
 function getItem(id) { return ITEM_DB[id] || { name: "不明物體", cost: 0, val: 0, rate: 0, value: 0, sellable: false, sellPrice: 0 }; }
 
-// ⛩️ 夥伴資料庫 (修改 duration 為分鐘)
+// ⛩️ 夥伴資料庫
 const HELPER_DB = {
     'h1': { 
         id: 'h1', name: '流浪浪人・伍丸', cost: 300, duration: 30, // 30 分鐘
@@ -399,13 +409,13 @@ const maps = [
     { name: "鳴神大社殘跡", minLvl: 30, maxLvl: 999, mobs: ["m_thunder", "m_bird"], boss: "b_tengu", rareMob: null }
 ];
 
-// ✨ 秘技資料庫 V0.4.2 (加入 cat 分類)
+// ✨ 秘技資料庫 V0.4.3 (加入 req 屬性需求)
 const skillDB = {
-    'agi_combo1': { id: 'agi_combo1', cat: 'init', name: '速擊', type: 'passive', desc: '攻擊時10%機率造成1.5倍傷害', color: '#70a1ff' },
-    'agi_combo2': { id: 'agi_combo2', cat: 'init', name: '殘影', type: 'passive', desc: '攻擊時10%機率觸發二連擊', color: '#70a1ff' },
-    'vit_strike': { id: 'vit_strike', cat: 'init', name: '剛力震擊', type: 'active', desc: '造成(攻擊+體質x2)的傷害', cd: 8, color: '#e1b12c' },
-    'vit_thorns': { id: 'vit_thorns', cat: 'init', name: '震怒', type: 'passive', desc: '受傷時20%機率反彈所有傷害', color: '#e1b12c' },
-    'str_cleave': { id: 'str_cleave', cat: 'init', name: '破甲重劈', type: 'active', desc: '造成2.5倍傷害，且破防15%', cd: 10, color: '#ff4757' }
+    'agi_combo1': { id: 'agi_combo1', req: { agi: 5 }, cat: 'init', name: '速擊', type: 'passive', desc: '攻擊時10%機率造成1.5倍傷害', color: '#70a1ff' },
+    'agi_combo2': { id: 'agi_combo2', req: { agi: 10 }, cat: 'init', name: '殘影', type: 'passive', desc: '攻擊時10%機率觸發二連擊', color: '#70a1ff' },
+    'vit_strike': { id: 'vit_strike', req: { vit: 5 }, cat: 'init', name: '剛力震擊', type: 'active', desc: '造成(攻擊+體質x2)的傷害', cd: 8, color: '#e1b12c' },
+    'vit_thorns': { id: 'vit_thorns', req: { vit: 15 }, cat: 'init', name: '震怒', type: 'passive', desc: '受傷時20%機率反彈所有傷害', color: '#e1b12c' },
+    'str_cleave': { id: 'str_cleave', req: { str: 15 }, cat: 'init', name: '破甲重劈', type: 'active', desc: '造成2.5倍傷害，且破防15%', cd: 10, color: '#ff4757' }
 };
 
 let currentSlotKey = "";
@@ -418,7 +428,7 @@ const defaultPlayer = {
     selectedPotion: 'p1', autoHeal: 0, autoHealEnabled: false,
     unlockedSkills: [], equippedSkills: [null, null, null, null],
     skillGambits: [0, 0, 0, 0], skillGambitValues: [50, 50, 50, 50], skillGambitOps: ['<', '<', '<', '<'],
-    helper: { id: null, remainSec: 0 }  // ✨ 確保在線秒數結構
+    helper: { id: null, remainSec: 0 }
 };
 
 let player = JSON.parse(JSON.stringify(defaultPlayer));
@@ -426,8 +436,9 @@ let monster = { id: "", name: "", hp: 0, mhp: 0, atk: 0, lvl: 1, isBoss: false, 
 let isPaused = true; let isReviving = false; let isResting = false;
 let currentView = 'battle'; let battleTimer = null; 
 let statPreview = { str: 0, vit: 0, agi: 0 };
-let currentLogTab = 'log'; let currentInvFilter = 'all'; let currentSkillFilter = 'all'; // ✨ 新增技能分類狀態
-let combatState = { mobAtkTimer: 2.0, skillCds: [0, 0, 0, 0], zenTimer: 0, zenDmgAccum: 0, potionCd: 0, helperSkillCd: 0 };
+let currentLogTab = 'log'; let currentInvFilter = 'all'; let currentSkillFilter = 'all'; 
+// ✨ 新增 slotSetupCds 作為換裝冷卻鎖
+let combatState = { mobAtkTimer: 2.0, skillCds: [0, 0, 0, 0], slotSetupCds: [0, 0, 0, 0], zenTimer: 0, zenDmgAccum: 0, potionCd: 0, helperSkillCd: 0 };
 let initAllocatedStats = { str: 2, vit: 1, agi: 0 };
 
 function el(id) { return document.getElementById(id); }
@@ -458,7 +469,7 @@ function startGame() { el('slot-screen').classList.add('hidden'); el('main-game'
 function allocInitStat(t, val) { if (player.statPoints > 0) { player.statPoints--; initAllocatedStats[t]++; } el(`init-${t}`).innerText = initAllocatedStats[t]; el('init-points').innerText = player.statPoints; }
 function resetInitStats() { player.statPoints = 5; initAllocatedStats = { str: 2, vit: 1, agi: 0 }; ['str','vit','agi'].forEach(s => el(`init-${s}`).innerText = initAllocatedStats[s]); el('init-points').innerText = 5; el('init-error').style.display = 'none'; }
 
-const CURRENT_VERSION = "0.4.2"; 
+const CURRENT_VERSION = "0.4.3"; 
 
 function loadGame() { 
     let s = localStorage.getItem(currentSlotKey); 
@@ -467,7 +478,6 @@ function loadGame() {
     if(s) {
         try {
             let sd = JSON.parse(s); 
-            // 🕵️‍♂️ [異常偵測系統] 
             let isDataCorrupted = 
                 (sd.gold === null || isNaN(Number(sd.gold))) || 
                 (isNaN(Number(sd.lvl)) || sd.lvl < 1) ||
@@ -497,7 +507,6 @@ function loadGame() {
                 return; 
             }
 
-            // --- 資料正常載入邏輯 ---
             player.potions = Object.assign({}, defaultPlayer.potions, sd.potions || {});
             player.mats = Object.assign({}, defaultPlayer.mats, sd.mats || {});
             player.gear = Object.assign({}, defaultPlayer.gear, sd.gear || {});
@@ -535,48 +544,43 @@ function loadGame() {
     } else { 
         checkSkillUnlocks(); 
         postLoadInit(); 
-    } // ✨ 這裡原本漏掉了一個括號，現在補上了
+    }
 
-    // ✨ [宗師終極加強區]
-    // 不論從哪個路徑載入（新創或舊檔），最終都進行強制排毒
+    // 強制排毒
     player.gold = Number(player.gold) || 0;
     player.exp = Number(player.exp) || 0;
     player.lvl = Number(player.lvl) || 1;
     player.str = Number(player.str) || 2;
     player.vit = Number(player.vit) || 1;
     player.agi = Number(player.agi) || 0;
+    if (player.helper) player.helper.remainSec = Number(player.helper.remainSec) || 0;
     
-    if (player.helper) {
-        player.helper.remainSec = Number(player.helper.remainSec) || 0;
-    }
+    // ✨ [宗師大清洗] 清空舊帳號可能殘留的異常 CD 數據
+    resetCombatState();
+    
     updateUI(); 
 }
 
 function postLoadInit() { 
     updateMapSelector(); spawn(false); updateUI(); isPaused = false; 
-    log("💡 【V0.4.2】：秘技覺醒與在線契約系統已成功載入！", "var(--accent)");
+    log("💡 【V0.4.3】：自動戰略與屬性共鳴版已成功載入！", "var(--accent)");
     if(player.lvl === 1 && player.exp === 0 && player.gold === 0 && player.potions.p1 === 5) log("🎁 新手物資已發放：生鮮野味 x5", "var(--quest)");
     if(player.name === "御雷神命") { let gmCard = el('card-gm'); if(gmCard) gmCard.classList.remove('hidden'); }
     if(currentView === 'battle' && !player.workStartTime) startBattleLoop(); 
     if(player.workStartTime) { isPaused = true; switchView('village'); showSubView('work'); }
 }
+
 function saveGame(manual) { 
     if (statPreview.str > 0 || statPreview.vit > 0 || statPreview.agi > 0) { if(manual) log("⚠️ 請先確定或取消配點後再進行存檔。", "var(--danger)"); return; }
 
-    // ✨ [宗師級除毒] 核心數值強制排毒，防止 NaN 寫入存檔
     player.gold = Number(player.gold) || 0;
     player.exp = Number(player.exp) || 0;
     player.lvl = Number(player.lvl) || 1;
     player.hp = Number(player.hp) || 100;
     
-    // 夥伴數據排毒
     if (player.helper) {
         player.helper.remainSec = Number(player.helper.remainSec) || 0;
-        // 如果 remainSec 變成負數或 NaN，強制歸零並解除合約
-        if (player.helper.remainSec <= 0) {
-            player.helper.remainSec = 0;
-            player.helper.id = null;
-        }
+        if (player.helper.remainSec <= 0) { player.helper.remainSec = 0; player.helper.id = null; }
     }
 
     player.lastSaveTime = Date.now(); 
@@ -631,7 +635,6 @@ function checkSkillUnlocks() {
     let newlyUnlocked = false;
     let addSkill = (id) => { if(!player.unlockedSkills.includes(id)) { player.unlockedSkills.push(id); log(`✨ 突破界限！領悟新秘技：【${skillDB[id].name}】`, "var(--quest)"); newlyUnlocked = true; } };
     
-    // B方案：屬性覺醒
     if(player.agi >= 5) addSkill('agi_combo1'); 
     if(player.agi >= 10) addSkill('agi_combo2');
     if(player.vit >= 5) addSkill('vit_strike'); 
@@ -733,8 +736,7 @@ function executeSkill(slotIdx) {
     updateUI(); return true;
 }
 
-function handleSlotClick(idx) { switchLogTab('skill'); el('skill-area').scrollIntoView({ behavior: 'smooth', block: 'center' }); log(`[戰術指令] 已聚焦至第 ${idx+1} 槽位。`, "var(--accent)"); }
-function manualCastSkill(idx) { if(player.autoBoss) return; if(executeSkill(idx) && player.mapIdx !== 0 && monster.hp <= 0) handleVictory(); }
+function handleSlotClick(idx) { switchLogTab('skill'); el('skill-area').scrollIntoView({ behavior: 'smooth', block: 'center' }); log(`[戰術配置] 已聚焦至第 ${idx+1} 槽位。`, "var(--accent)"); }
 function hasPassive(sid) { return player.equippedSkills.includes(sid); }
 function checkGambit(idx) {
     let g = player.skillGambits[idx]; let val = player.skillGambitValues[idx]; let op = player.skillGambitOps[idx];
@@ -745,31 +747,37 @@ function checkGambit(idx) {
     return false;
 }
 
-// ⚔️ 核心戰鬥迴圈 (✨ 修正了括號位置與扣秒邏輯)
 function startBattleLoop() {
-    if(battleTimer) clearTimeout(battleTimer); 
+    if(battleTimer) { clearTimeout(battleTimer); battleTimer = null; } 
     if(isPaused || currentView !== 'battle' || isReviving) return;
     
     let delay = 1500 / (1 + player.agi * 0.025); 
     if (delay < 200) delay = 200; 
-    let tickSec = Number((delay / 1000).toFixed(3)); // ✨ 強制限制小數點位數，避免浮點運算錯誤
+    let tickSec = Number((delay / 1000).toFixed(3)); 
 
-    // 夥伴秒數扣除 (排毒版)
+    // ✨ CD 扣除區 (包含藥水、技能、裝備冷卻鎖)
+    if (combatState.potionCd > 0) combatState.potionCd = Math.max(0, combatState.potionCd - tickSec);
+    for(let i=0; i<4; i++) {
+        if(combatState.skillCds[i] > 0) combatState.skillCds[i] = Math.max(0, combatState.skillCds[i] - tickSec);
+        if(combatState.slotSetupCds[i] > 0) combatState.slotSetupCds[i] = Math.max(0, combatState.slotSetupCds[i] - tickSec);
+    }
+
+    if (player.autoHealEnabled && player.hp < (getMaxHP() * player.autoHeal) && combatState.potionCd <= 0) {
+        autoHealLogic(false);
+    }
+
     if (player.helper && player.helper.id && player.helper.remainSec > 0) {
         let currentSec = Number(player.helper.remainSec) || 0;
         player.helper.remainSec = Math.max(0, currentSec - tickSec);
-        
         if (player.helper.remainSec <= 0) {
             log(`⛩️ ${HELPER_DB[player.helper.id] ? HELPER_DB[player.helper.id].name : "夥伴"} 的合約已到期。`, "var(--cherry)");
-            player.helper.id = null;
-            player.helper.remainSec = 0;
-            updateUI();
+            player.helper.id = null; player.helper.remainSec = 0; updateUI();
         }
     }
 
-    // 戰鬥秒回邏輯
+    // ✨ VIT 自然回血 (全域生效)
     if (player.hp < getMaxHP()) {
-        let regen = (getMaxHP() * 0.005) + (player.vit * 0.2); 
+        let regen = player.vit * 0.1; // 每秒恢復 VIT * 0.1
         player.hp = Math.min(getMaxHP(), player.hp + (regen * tickSec));
     }
 
@@ -783,6 +791,7 @@ function startBattleLoop() {
     let isCrit = false;
     let skillUsed = false;
     
+    // ✨ 全自動技能觸發 (無需手動點擊)
     if(!isDummy ? monster.hp > 0 : true) {
         for(let i=0; i<4; i++) {
             let sid = player.equippedSkills[i];
@@ -792,96 +801,60 @@ function startBattleLoop() {
         }
     }
 
-    // 玩家物理普攻
     if(!skillUsed && baseAtk > 0) { 
-        let hits = 1;
-        let currentAtk = baseAtk;
-        
+        let hits = 1; let currentAtk = baseAtk;
         if(hasPassive('agi_combo2') && Math.random() < 0.10) { hits = 2; currentAtk = Math.floor(currentAtk * 1.2); log(`⚡ 觸發殘影！`, "var(--accent)"); }
         else if(hasPassive('agi_combo1') && Math.random() < 0.10) { currentAtk = Math.floor(currentAtk * 1.5); log(`⚡ 觸發速擊！`, "var(--accent)"); }
-        
-        let skillHit = Math.random() < 1.0; 
-        let targetEva = isDummy ? 0 : (monster.eva || 0);
+        let skillHit = Math.random() < 1.0; let targetEva = isDummy ? 0 : (monster.eva || 0);
 
         for(let i=0; i<hits; i++) {
             if (skillHit && (Math.random() * 100 >= targetEva)) {
-                let mDefVal = monster.defVal || 0;
-                let mDr = monster.dr || 0;
+                let mDefVal = monster.defVal || 0; let mDr = monster.dr || 0;
                 if(hasPassive('str_cleave')) mDr = Math.max(0, mDr - 0.15); 
-                
-                let finalDmg = Math.max(1, (currentAtk - mDefVal)) * (1 - mDr);
-                finalDmg = Math.floor(finalDmg);
-
+                let finalDmg = Math.floor(Math.max(1, (currentAtk - mDefVal)) * (1 - mDr));
                 if (isDummy) {
-                    combatState.zenDmgAccum += finalDmg; 
-                    setTimeout(()=>showDmg('m-box', finalDmg, 'white'), i*150);
+                    combatState.zenDmgAccum += finalDmg; setTimeout(()=>showDmg('m-box', finalDmg, 'white'), i*150);
                 } else if(monster.hp > 0) {
                     monster.hp -= finalDmg;
                     if(mDefVal > currentAtk && Math.random() < 0.2) log(`🛡️ 怪物護甲極厚，攻擊如同刮痧。`, "#666");
                     setTimeout(()=>showDmg('m-box', finalDmg, 'white'), i*150);
                 }
-            } else {
-                setTimeout(()=>showDmg('m-box', "MISS", '#888'), i*150);
-            }
+            } else { setTimeout(()=>showDmg('m-box', "MISS", '#888'), i*150); }
         }
     }
 
-    // 🏮 夥伴主動技能邏輯
     if(player.helper && player.helper.id && HELPER_DB[player.helper.id]) {
         let hdb = HELPER_DB[player.helper.id];
         if(!combatState.helperSkillCd) combatState.helperSkillCd = hdb.skillCd;
         combatState.helperSkillCd -= tickSec;
-
         if(combatState.helperSkillCd <= 0) {
             combatState.helperSkillCd = hdb.skillCd; 
-            
             if(hdb.skillType === 'heal') {
-                player.hp = Math.min(getMaxHP(), player.hp + hdb.skillVal);
-                showDmg('p-box', `+${hdb.skillVal}`, 'var(--quest)');
+                player.hp = Math.min(getMaxHP(), player.hp + hdb.skillVal); showDmg('p-box', `+${hdb.skillVal}`, 'var(--quest)');
             } else if(hdb.skillType === 'attack' && (!isDummy ? monster.hp > 0 : true)) {
-                if(isDummy) {
-                    combatState.zenDmgAccum += hdb.skillVal;
-                    showDmg('m-box', hdb.skillVal, '#fdcb6e');
-                } else {
-                    monster.hp -= hdb.skillVal;
-                    showDmg('m-box', hdb.skillVal, '#fdcb6e');
-                    log(`💥 ${hdb.name} 施放了援護攻擊！(真實傷害)`, "var(--danger)");
-                }
+                if(isDummy) { combatState.zenDmgAccum += hdb.skillVal; showDmg('m-box', hdb.skillVal, '#fdcb6e'); } 
+                else { monster.hp -= hdb.skillVal; showDmg('m-box', hdb.skillVal, '#fdcb6e'); log(`💥 ${hdb.name} 施放了援護攻擊！`, "var(--danger)"); }
             } else if(hdb.skillType === 'seal' && !isDummy && monster.hp > 0) {
-                combatState.mobAtkTimer = Math.min(5.0, combatState.mobAtkTimer + hdb.skillVal);
-                showDmg('m-box', "封印", 'var(--accent)');
-                log(`📜 ${hdb.name} 施放定身符！延緩敵人攻擊。`, "var(--accent)");
+                combatState.mobAtkTimer = Math.min(5.0, combatState.mobAtkTimer + hdb.skillVal); showDmg('m-box', "封印", 'var(--accent)'); log(`📜 ${hdb.name} 施放定身符！`, "var(--accent)");
             }
         }
     }
     
-    // 怪物攻擊玩家
     if (!isDummy) {
         if (monster.hp <= 0) { 
             handleVictory(); 
         } else if (monster.atk > 0) { 
             combatState.mobAtkTimer -= tickSec;
             if (combatState.mobAtkTimer <= 0) {
-                combatState.mobAtkTimer = 2.0; 
-                let myEva = Math.min(70, getEvaPercent(player.agi)); 
-                
+                combatState.mobAtkTimer = 2.0; let myEva = Math.min(70, getEvaPercent(player.agi)); 
                 if (Math.random() * 100 >= myEva) { 
-                    let pDefVal = Math.floor(player.vit * 0.5); 
-                    let pDr = getDefPercent(player.vit) / 100;
-                    
-                    let mDmg = Math.max(1, (monster.atk - pDefVal)) * (1 - pDr);
-                    mDmg = Math.floor(mDmg);
-
+                    let pDefVal = Math.floor(player.vit * 0.5); let pDr = getDefPercent(player.vit) / 100;
+                    let mDmg = Math.floor(Math.max(1, (monster.atk - pDefVal)) * (1 - pDr));
                     if(hasPassive('vit_thorns') && Math.random() < 0.20 && mDmg > 1) { 
-                        monster.hp -= mDmg; 
-                        showDmg('m-box', `反震 ${mDmg}`, 'var(--cherry)'); 
+                        monster.hp -= mDmg; showDmg('m-box', `反震 ${mDmg}`, 'var(--cherry)'); 
                     }
-                    
-                    player.hp -= mDmg; 
-                    showDmg('p-box', mDmg, '#ff4757');
-                } else { 
-                    showDmg('p-box', "MISS", 'skyblue'); 
-                }
+                    player.hp -= mDmg; showDmg('p-box', mDmg, '#ff4757');
+                } else { showDmg('p-box', "MISS", 'skyblue'); }
             }
         }
     }
@@ -900,8 +873,14 @@ function handleZenComplete() {
 
 function handleVictory() {
     let m = maps[player.mapIdx]; let dbMob = MOB_DB[monster.id]; if(!m || !dbMob) return;
-    let isOverLeveled = player.lvl > m.maxLvl; let expGained = isOverLeveled ? 0 : dbMob.exp; let goldGained = isOverLeveled ? Math.max(1, Math.floor(dbMob.gold * 0.3)) : dbMob.gold;
-    player.exp += expGained; player.gold += goldGained;
+    
+    let isOverLeveled = player.lvl > m.maxLvl; 
+    let expGained = isOverLeveled ? 0 : (Number(dbMob.exp) || 0); 
+    let goldGained = isOverLeveled ? Math.max(1, Math.floor((Number(dbMob.gold) || 0) * 0.3)) : (Number(dbMob.gold) || 0);
+    
+    player.exp = (Number(player.exp) || 0) + expGained; 
+    player.gold = (Number(player.gold) || 0) + goldGained;
+    
     let dropMsgs = [];
     dbMob.drops.forEach(l => { if(Math.random() < l.chance) { let amount = l.qty || 1; addItemToBag(l.id, amount); dropMsgs.push(`${getItem(l.id).name}x${amount}`); } });
 
@@ -909,19 +888,21 @@ function handleVictory() {
         if(dropMsgs.length === 0) dropMsgs.push("無特別物品");
         let earnTxt = expGained > 0 ? `獲得 ${expGained} 經驗, ${goldGained} 金幣` : `境界過高，獲得 ${goldGained} 金幣`;
         log(`🏆 擊敗首領！${earnTxt}。<br>🎁 戰利品：${dropMsgs.join("，")}`, "var(--gold)");
-        if (player.mapIdx < maps.length - 1) { player.mapIdx++; player.maxMapIdx = Math.max(player.maxMapIdx, player.mapIdx); openModal("🗺️ 領域擴張", `【${maps[player.mapIdx].name}】已解鎖。`, "前進"); }
+        if (player.mapIdx < maps.length - 1) { 
+            player.mapIdx++; player.maxMapIdx = Math.max(player.maxMapIdx, player.mapIdx); 
+            saveGame(false); openModal("🗺️ 領域擴張", `【${maps[player.mapIdx].name}】已解鎖。`, "前進"); 
+        }
         player.kills = 0; updateMapSelector();
     } else {
         if(isOverLeveled && Math.random() < 0.05) log("⚠️ 怪物過弱，無修行經驗。", "var(--danger)");
         if(dropMsgs.length > 0) log(`🎁 獲得：${dropMsgs.join(", ")}`, "var(--quest)");
         if(player.mapIdx == player.maxMapIdx && player.kills < 10) player.kills++;
     }
-    checkLevelUp(); 
-    spawn();
+    checkLevelUp(); spawn();
 }
 
 function addItemToBag(id, qty) { let item = getItem(id); if(item.cat === 'rec') { if(!player.potions[id]) player.potions[id] = 0; player.potions[id] += qty; } else if(item.cat === 'mat') { if(!player.mats[id]) player.mats[id] = 0; player.mats[id] += qty; } }
-function resetCombatState() { combatState.mobAtkTimer = 2.0; combatState.skillCds = [0, 0, 0, 0]; combatState.zenTimer = 0; combatState.zenDmgAccum = 0; combatState.potionCd = 0; combatState.helperSkillCd = 0; }
+function resetCombatState() { combatState = { mobAtkTimer: 2.0, skillCds: [0, 0, 0, 0], slotSetupCds: [0, 0, 0, 0], zenTimer: 0, zenDmgAccum: 0, potionCd: 0, helperSkillCd: 0 }; }
 
 function handleDeath() { 
     if(player.revives > 0) { player.revives--; log("🛡️ 不死御守發效！靈魂回歸肉身。", "var(--gold)"); player.hp = getMaxHP(); updateUI(); return; } 
@@ -935,50 +916,29 @@ function handleDeath() {
 }
 
 function checkLevelUp() { 
-    // 確保所有數值在計算前都是有效的數字
-    player.exp = Number(player.exp) || 0;
-    player.next = Number(player.next) || 30;
-
+    player.exp = Number(player.exp) || 0; player.next = Number(player.next) || 30;
     while(player.exp >= player.next && player.next > 0) { 
-        player.lvl = (Number(player.lvl) || 1) + 1; 
-        player.exp -= player.next; 
-        
-        let growth = player.lvl < 20 ? 1.2 : 1.1; 
-        player.next = Math.floor(player.next * growth) + (player.lvl * 5); 
-        player.statPoints += 3; 
-        player.hp = getMaxHP(); 
-        log("🎉 境界提升！體力已恢復。", "var(--cherry)"); 
-        checkSkillUnlocks(); 
+        player.lvl = (Number(player.lvl) || 1) + 1; player.exp -= player.next; 
+        let growth = player.lvl < 20 ? 1.2 : 1.1; player.next = Math.floor(player.next * growth) + (player.lvl * 5); 
+        player.statPoints += 3; player.hp = getMaxHP(); log("🎉 境界提升！體力已恢復。", "var(--cherry)"); checkSkillUnlocks(); 
     } 
     updateUI();
 }
 
 function spawn(boss = false) {
     let m = maps[player.mapIdx]; if(!m) return; 
-    combatState.mobAtkTimer = 2.0; 
-    let mobId = "";
-    
-    if(m.name === "[修行] 幽靜道場") { 
-        mobId = "m_dummy"; 
-    } else if (boss && m.boss) { 
-        mobId = m.boss; 
-    } else {
-        if (m.rareMob && Math.random() < m.rareMob.chance) { 
-            mobId = m.rareMob.id; 
-            log(`⚠️ 遭遇了稀有怪物：${MOB_DB[mobId].name}！`, "var(--gold)");
-        } else { 
-            mobId = m.mobs[Math.floor(Math.random() * m.mobs.length)]; 
-        }
+    combatState.mobAtkTimer = 2.0; let mobId = "";
+    if(m.name === "[修行] 幽靜道場") { mobId = "m_dummy"; } 
+    else if (boss && m.boss) { mobId = m.boss; } 
+    else {
+        if (m.rareMob && Math.random() < m.rareMob.chance) { mobId = m.rareMob.id; log(`⚠️ 遭遇了稀有怪物：${MOB_DB[mobId].name}！`, "var(--gold)"); } 
+        else { mobId = m.mobs[Math.floor(Math.random() * m.mobs.length)]; }
     }
-    
     let dbMob = MOB_DB[mobId]; 
     if(dbMob) {
         let calcHP = dbMob.hp / 15; let calcATK = dbMob.atk * 2.2; let calcDEF = (dbMob.defVal || 0) * 3.5; let calcEVA = (dbMob.eva || 0) * 1.5;
         let autoLvl = Math.max(1, Math.ceil((calcHP + calcATK + calcDEF + calcEVA) / 10));
-        monster = { 
-            id: mobId, name: dbMob.name, hp: dbMob.hp, mhp: dbMob.hp, atk: dbMob.atk, 
-            defVal: dbMob.defVal || 0, dr: dbMob.dr || 0, eva: dbMob.eva || 0, lvl: autoLvl, isBoss: dbMob.isBoss || false 
-        };
+        monster = { id: mobId, name: dbMob.name, hp: dbMob.hp, mhp: dbMob.hp, atk: dbMob.atk, defVal: dbMob.defVal || 0, dr: dbMob.dr || 0, eva: dbMob.eva || 0, lvl: autoLvl, isBoss: dbMob.isBoss || false };
     }
     let btn = el('btn-boss'); if(btn) btn.disabled = (player.kills < 10 || monster.isBoss || isReviving || !m.boss);
 }
@@ -1012,30 +972,16 @@ function updateMapSelector() {
 // 🎒 處理分頁切換
 function switchLogTab(type) {
     currentLogTab = type;
-    el('tab-log-btn').classList.toggle('active', type === 'log'); 
-    el('tab-inv-btn').classList.toggle('active', type === 'inv'); 
-    el('tab-skill-btn').classList.toggle('active', type === 'skill');
-    el('tab-helper-btn').classList.toggle('active', type === 'helper'); 
+    el('tab-log-btn').classList.toggle('active', type === 'log'); el('tab-inv-btn').classList.toggle('active', type === 'inv'); 
+    el('tab-skill-btn').classList.toggle('active', type === 'skill'); el('tab-helper-btn').classList.toggle('active', type === 'helper'); 
+    el('log').classList.toggle('hidden', type !== 'log'); el('inv-area').classList.toggle('hidden', type !== 'inv'); 
+    el('skill-area').classList.toggle('hidden', type !== 'skill'); el('helper-area').classList.toggle('hidden', type !== 'helper'); 
     
-    el('log').classList.toggle('hidden', type !== 'log'); 
-    el('inv-area').classList.toggle('hidden', type !== 'inv'); 
-    el('skill-area').classList.toggle('hidden', type !== 'skill');
-    el('helper-area').classList.toggle('hidden', type !== 'helper'); 
-    
-    if(type === 'inv') renderBag(); 
-    if(type === 'skill') renderPath();
-    if(type === 'helper') renderHelper();
+    if(type === 'inv') renderBag(); if(type === 'skill') renderPath(); if(type === 'helper') renderHelper();
 }
 
 function setInvFilter(cat) { currentInvFilter = cat; document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active')); el(`fb-${cat}`).classList.add('active'); renderBag(); }
-
-// ✨ 秘技過濾器 (V0.4.2)
-function setSkillFilter(cat) {
-    currentSkillFilter = cat;
-    document.querySelectorAll('#skill-area .f-btn').forEach(b => b.classList.remove('active'));
-    el(`sb-${cat}`).classList.add('active');
-    renderPath();
-}
+function setSkillFilter(cat) { currentSkillFilter = cat; document.querySelectorAll('#skill-area .f-btn').forEach(b => b.classList.remove('active')); el(`sb-${cat}`).classList.add('active'); renderPath(); }
 
 function renderBag() {
     const listEl = el('inv-list'); if(!listEl) return; listEl.innerHTML = "";
@@ -1052,7 +998,6 @@ function renderBag() {
         let qtyInputHtml = db.sellable ? `<input type="number" class="bag-qty-input" data-id="${slot.id}" value="1" min="1" max="${slot.count}">` : `<span style="color:#444; font-size:12px;">-</span>`;
         listEl.innerHTML += `<div class="inv-row ${db.cat}">${checkHtml}<div style="flex:1; margin-left:10px;"><div style="color:#eee; font-size:1.05em;">${db.name} <b style="color:var(--gold)">x${slot.count}</b></div><div style="color:#666; font-size:0.85em;">單價: $${db.sellPrice}</div></div><div style="text-align:right; display:flex; align-items:center; gap:5px;"><span style="font-size:12px; color:#555;">賣出數量:</span>${qtyInputHtml}</div></div>`;
     });
-
     listEl.innerHTML += `<div style="position: sticky; bottom: 0; background: #000; padding: 12px 0; border-top: 1px solid #333; margin-top: 10px; text-align:center;"><button class="btn-action" style="width:90%; background:linear-gradient(180deg, #ffd700, #b8860b); color:#000; border-radius:20px; box-shadow:0 2px 5px rgba(0,0,0,0.5); font-size:1em;" onclick="executeSelectedSell()">💰 賣出選中物品</button></div>`;
 }
 
@@ -1071,24 +1016,23 @@ function executeSelectedSell() {
     if(totalEarned > 0) { player.gold += totalEarned; log(`💰 變賣清單：${soldSummary.join(", ")}，共入帳 ${totalEarned} 金幣！`, "var(--gold)"); updateUI(); renderBag(); }
 }
 
-// ✨ 宗師改建：含 Filter 功能的 renderPath
 function renderPath() {
     const c = el('skill-list-content'); if(!c) return;
-    
-    // 過濾邏輯
-    let filteredSkills = player.unlockedSkills.filter(sid => {
-        if(currentSkillFilter === 'all') return true;
-        return (skillDB[sid] && skillDB[sid].cat === currentSkillFilter);
-    });
+    let filteredSkills = player.unlockedSkills.filter(sid => { if(currentSkillFilter === 'all') return true; return (skillDB[sid] && skillDB[sid].cat === currentSkillFilter); });
 
     let html = `<div style="display:flex; flex-direction:column; gap:8px; text-align:left;">`;
-    if(filteredSkills.length === 0) { 
-        html += `<div style="color:#666; text-align:center; padding: 20px;">尚無此類別的秘技...</div>`; 
-    } else {
+    if(filteredSkills.length === 0) { html += `<div style="color:#666; text-align:center; padding: 20px;">尚無此類別的秘技...</div>`; } 
+    else {
         filteredSkills.forEach(sid => {
             let sk = skillDB[sid]; let isEqIdx = player.equippedSkills.indexOf(sid); let isEq = isEqIdx !== -1;
             let btnAction = isEq ? `unequipSkill(${isEqIdx})` : `equipSkill('${sid}')`; let btnText = isEq ? '卸下' : '裝備';
             let btnColor = isEq ? 'var(--danger)' : 'var(--quest)'; let btnFontColor = isEq ? '#fff' : '#000';
+            
+            // ✨ 如果技能正在調息，鎖定卸除按鈕
+            if (isEq && combatState.slotSetupCds[isEqIdx] > 0) {
+                btnColor = '#444'; btnFontColor = '#888'; btnText = '調息中'; 
+            }
+
             let tacticHtml = "";
             if (isEq && sk.type === 'active') {
                 let i = isEqIdx;
@@ -1103,7 +1047,7 @@ function renderPath() {
                 tacticHtml += `</div>`;
             }
             html += `
-            <div style="background:#1a1a2e; padding:12px; border-left:4px solid ${sk.type==='active'?'var(--skill)':'var(--passive)'}; border-radius:6px;">
+            <div style="background:#1a1a2e; padding:12px; border-left:4px solid ${sk.type==='active'?'var(--skill)':'var(--passive)'}; border-radius:6px; position:relative;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div><b style="color:${sk.color}; font-size:1.1em;">${sk.name}</b><span style="font-size:0.85em; color:#888; margin-left:8px;">${isEq ? `(裝備於第 ${isEqIdx+1} 槽)` : ''}</span><br><small style="color:#ddd; font-size:0.95em;">${sk.desc}</small></div>
                     <button class="btn-action" style="padding:6px 15px; font-size:0.95em; background:${btnColor}; color:${btnFontColor}; border-radius:4px;" onclick="${btnAction}">${btnText}</button>
@@ -1114,17 +1058,12 @@ function renderPath() {
     c.innerHTML = html + `</div>`;
 }
 
-// ⛩️ 渲染夥伴分頁
 function renderHelper() {
     const c = el('helper-area'); if(!c) return;
     if(!player.helper || !player.helper.id || !HELPER_DB[player.helper.id]) {
-        c.innerHTML = `<div style="text-align:center; color:#666; padding:30px; line-height:1.6;">身邊空無一物...<br><br>請前往結界之里的【居酒屋】尋找結契的夥伴。</div>`;
-        return;
+        c.innerHTML = `<div style="text-align:center; color:#666; padding:30px; line-height:1.6;">身邊空無一物...<br><br>請前往結界之里的【居酒屋】尋找結契的夥伴。</div>`; return;
     }
-    let hdb = HELPER_DB[player.helper.id];
-    let timeStr = formatHelperTime(player.helper.remainSec);
-    let leftTxt = `<span style="color:${player.helper.remainSec < 60 ? 'var(--danger)' : 'var(--quest)'}; font-weight:bold;">${timeStr}</span>`;
-    
+    let hdb = HELPER_DB[player.helper.id]; let timeStr = formatHelperTime(player.helper.remainSec); let leftTxt = `<span style="color:${player.helper.remainSec < 60 ? 'var(--danger)' : 'var(--quest)'}; font-weight:bold;">${timeStr}</span>`;
     c.innerHTML = `
         <div style="background:#1a1a2e; border:1px solid #fdcb6e; border-radius:8px; padding:20px; text-align:center; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
             <h3 style="color:#fdcb6e; margin-top:0; font-size:1.3em;">⛩️ ${hdb.name}</h3>
@@ -1139,34 +1078,70 @@ function updateGambit(slotIdx, val) { player.skillGambits[slotIdx] = parseInt(va
 function updateGambitVal(idx, val) { let n = parseInt(val); if(isNaN(n)) n = 0; player.skillGambitValues[idx] = Math.max(0, Math.min(100, n)); saveGame(false); }
 function toggleGambitOp(idx) { player.skillGambitOps[idx] = (player.skillGambitOps[idx] === '<') ? '>' : '<'; renderPath(); saveGame(false); }
 
+// ✨ 裝載技能與 10 秒調息機制
 function equipSkill(sid) { 
     let emptyIdx = player.equippedSkills.indexOf(null); 
-    if(emptyIdx !== -1) { player.equippedSkills[emptyIdx] = sid; player.skillGambits[emptyIdx] = 0; player.skillGambitValues[emptyIdx] = 50; player.skillGambitOps[emptyIdx] = '<'; renderPath(); updateUI(); log(`📜 裝備了秘技：${skillDB[sid].name}`, "var(--quest)"); saveGame(false); 
+    if(emptyIdx !== -1) { 
+        player.equippedSkills[emptyIdx] = sid; player.skillGambits[emptyIdx] = 0; player.skillGambitValues[emptyIdx] = 50; player.skillGambitOps[emptyIdx] = '<'; 
+        combatState.slotSetupCds[emptyIdx] = 10.0; // ✨ 裝載後鎖定 10 秒
+        renderPath(); updateUI(); log(`📜 裝備了秘技：${skillDB[sid].name}，進入調息狀態。`, "var(--quest)"); saveGame(false); 
     } else { openModal("槽位已滿", "4個技能槽已滿，請先卸下其他技能。", "知道了"); } 
 }
-function unequipSkill(idx) { player.equippedSkills[idx] = null; player.skillGambits[idx] = 0; combatState.skillCds[idx] = 0; renderPath(); updateUI(); log("📜 已卸下秘技。", "#aaa"); saveGame(false); }
 
+function unequipSkill(idx) { 
+    // ✨ 檢查是否還在調息中
+    if (combatState.slotSetupCds[idx] > 0) return openModal("調息中", `此技能尚需 ${Math.ceil(combatState.slotSetupCds[idx])} 秒方可卸除！`, "了解");
+    player.equippedSkills[idx] = null; player.skillGambits[idx] = 0; combatState.skillCds[idx] = 0; combatState.slotSetupCds[idx] = 0; renderPath(); updateUI(); log("📜 已卸下秘技。", "#aaa"); saveGame(false); 
+}
+
+// ✨ 最短距離 AI 推薦演算法
 function updateStatHints() {
     const hintEl = el('stat-hint');
     if (!hintEl) return;
-    let nextHint = "";
-    if (player.str < 15) nextHint = "【武道】力量達 15 可感悟破甲重劈...";
-    else if (player.agi < 10) nextHint = "【身法】敏捷達 10 可感悟殘影...";
-    else if (player.vit < 15) nextHint = "【內息】體質達 15 可感悟震怒...";
-    else nextHint = "已掌握目前境界所有基礎招式。";
-    hintEl.innerText = nextHint;
+    
+    let minDist = Infinity;
+    let targetMsg = "已掌握目前境界所有基礎招式。";
+    
+    for(let id in skillDB) {
+        if(player.unlockedSkills.includes(id)) continue; // 已解鎖的跳過
+        let req = skillDB[id].req;
+        
+        let isMet = true;
+        let currentDist = 0;
+        let mainStat = "";
+        
+        for(let s in req) {
+            let diff = req[s] - player[s];
+            if(diff > 0) {
+                isMet = false;
+                currentDist += diff;
+                mainStat = s.toUpperCase();
+            }
+        }
+        
+        if(!isMet && currentDist < minDist) {
+            minDist = currentDist;
+            let statName = mainStat === 'STR' ? '力量' : mainStat === 'VIT' ? '體質' : '敏捷';
+            targetMsg = `【感悟】建議提升 ${statName} (相距 ${minDist} 點) 以領悟 ${skillDB[id].name}...`;
+        }
+    }
+    hintEl.innerText = targetMsg;
 }
 
 function updateUI() {
     if(el('p-name')) el('p-name').innerText = player.name || "無名者"; if(el('p-display-name')) el('p-display-name').innerText = player.name || "無名者"; if(el('p-lvl')) el('p-lvl').innerText = player.lvl; if(el('p-gold')) el('p-gold').innerText = player.gold.toLocaleString();
     ['str','vit','agi'].forEach(s => { if(el(`p-${s}-val`)) el(`p-${s}-val`).innerText = player[s]; if(el(`stat-${s}`)) el(`stat-${s}`).innerText = player[s]; if(el(`pre-${s}`)) el(`pre-${s}`).innerText = statPreview[s] > 0 ? `+${statPreview[s]}` : ""; });
-    if(el('stat-points')) el('stat-points').innerText = player.statPoints; if(el('alloc-btns')) el('alloc-btns').classList.toggle('hidden', (statPreview.str + statPreview.vit + statPreview.agi) === 0);
+    
+    if(el('stat-points')) {
+        el('stat-points').innerText = player.statPoints;
+        // ✨ 動態套用呼吸燈效果
+        if (player.statPoints > 0) el('stat-points').classList.add('glow-pts');
+        else el('stat-points').classList.remove('glow-pts');
+    }
+    
+    if(el('alloc-btns')) el('alloc-btns').classList.toggle('hidden', (statPreview.str + statPreview.vit + statPreview.agi) === 0);
 
-    let curAtk = getAtkVal(); 
-    let curSpd = (1.5 / (1 + player.agi * 0.025)).toFixed(2); 
-    let curDef = getDefPercent(player.vit).toFixed(1); 
-    let curEva = getEvaPercent(player.agi).toFixed(1);
-
+    let curAtk = getAtkVal(); let curSpd = (1.5 / (1 + player.agi * 0.025)).toFixed(2); let curDef = getDefPercent(player.vit).toFixed(1); let curEva = getEvaPercent(player.agi).toFixed(1);
     let tempStr = player.str + statPreview.str; let tempVit = player.vit + statPreview.vit; let tempAgi = player.agi + statPreview.agi;
 
     if(el('det-atk')) { let nAtk = curAtk + Math.floor(tempStr*1.5) - Math.floor(player.str*1.5); let diff = nAtk - curAtk; el('det-atk').innerHTML = `${curAtk}${diff > 0 ? ` <span style="color:lime; font-size:0.9em;">+${diff}</span>` : ""}`; }
@@ -1190,7 +1165,6 @@ function updateUI() {
         if(mHpText) mHpText.innerText = `${Math.floor(monster.hp)} / ${monster.mhp}`; if(mSubInfo) mSubInfo.innerHTML = `Lv. ${monster.lvl}`;
     }
 
-    // ✨ 夥伴時間 UI 顯示
     let hInfo = el('helper-info');
     if(hInfo) { 
         if(player.helper && player.helper.id && HELPER_DB[player.helper.id]) {
@@ -1222,12 +1196,18 @@ function updateUI() {
                 slotEl.style.opacity = (isAct && !isGambitReady) ? "0.4" : "1.0"; slotEl.className = `skill-slot ${isAct ? 'active' : 'passive'}`;
                 let html = `<b style="color:${sk.color}">${sk.name}</b>`;
                 if(isAct && combatState.skillCds[i] > 0) html += `<div class="skill-cd-overlay" style="height:${(combatState.skillCds[i] / sk.cd) * 100}%;">${Math.ceil(combatState.skillCds[i])}s</div>`;
+                
+                // ✨ 新增裝載調息鎖定顯示
+                if(combatState.slotSetupCds[i] > 0) {
+                    html += `<div class="skill-setup-overlay">🔒</div>`;
+                }
+
                 slotEl.innerHTML = html;
             }
         }
     }
     
-    updateStatHints(); // ✨ 更新 B方案提示
+    updateStatHints(); 
 
     if(currentLogTab === 'inv') { const activeEl = document.activeElement; const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT'); if(!isEditing) renderBag(); }
     if(currentLogTab === 'skill') { const activeEl = document.activeElement; const isEditing = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT'); if(!isEditing) renderPath(); }
@@ -1262,7 +1242,6 @@ function startWork() {
 
 function stopWork() {
     let now = Date.now();
-    // 🛡️ 防呆：如果 workStartTime 莫名其妙消失，直接給現在時間，讓秒數變 0
     if (!player.workStartTime) player.workStartTime = now; 
 
     let hourlyRate = 1200 + (player.lvl * 100);
@@ -1273,16 +1252,12 @@ function stopWork() {
 
     let elapsedSecs = Math.floor((now - player.workStartTime) / 1000);
     
-    // 🛡️ 時空防線：防止負數或 NaN
     if (isNaN(elapsedSecs) || elapsedSecs < 0) elapsedSecs = 0;
-    
-    // 🛡️ 上限防線：防止系統時間大跳躍（例如單次打工上限 12 小時）
     if (elapsedSecs > 43200) elapsedSecs = 43200;
 
     let earn = Math.floor((elapsedSecs / 3600) * hourlyRate);
     
     if (earn > 0) {
-        // ✨ 強制排毒式相加：確保留在錢包裡的永遠是數字
         let currentGold = Number(player.gold) || 0;
         player.gold = currentGold + earn;
         log(`💰 老闆：「辛苦啦！這是你的工錢。」獲得了 $${earn.toLocaleString()}。`, "var(--gold)");
@@ -1381,13 +1356,11 @@ function showSubView(s) {
 function renderIzakaya(tab = 'helper') {
     const c = el('sub-content'); if(!c) return; 
     
-    // ✨ 宗師優化：即時計算目前夥伴的剩餘時間文字
     let currentHelperTime = "無合約";
     if (player.helper && player.helper.id && player.helper.remainSec > 0) {
         currentHelperTime = formatHelperTime(player.helper.remainSec);
     }
 
-    // ✨ 新增：頂部資訊看板 (金幣與合約時間)
     let infoBarHtml = `
         <div style="background:rgba(0,0,0,0.4); padding:12px; border-radius:8px; margin-bottom:15px; border:1px solid #444; display:flex; justify-content:space-between; align-items:center;">
             <div>
@@ -1431,29 +1404,24 @@ function renderIzakaya(tab = 'helper') {
     `;
 }
 
-
-// ✨ 夥伴在線招募邏輯
 function hireHelper(id) { 
     let h = HELPER_DB[id]; 
     if(!h) return;
     
     if(player.gold >= h.cost) { 
-        // 扣除金幣
         player.gold -= h.cost; 
-        let buySec = h.duration * 60; // 分鐘轉為秒數
+        let buySec = h.duration * 60;
 
         if (player.helper && player.helper.id === id) {
-            // 同一人續約，在線秒數直接累加
             player.helper.remainSec += buySec;
             log(`🍶 續約成功！時間增加了 ${h.duration} 分鐘。`, "#fdcb6e"); 
         } else {
-            // 新簽約 (會覆蓋前一個不同的夥伴)
             player.helper = { id: id, remainSec: buySec }; 
             log(`🍶 成功與 ${h.name} 簽訂結契！時長 ${h.duration} 分鐘。`, "#fdcb6e"); 
         }
         
         updateUI(); 
-        renderIzakaya('helper'); // ✨ 關鍵：按完按鈕後立刻刷新居酒屋介面，讓錢和時間即時跳動
+        renderIzakaya('helper'); 
     } else { 
         openModal("金幣不足", "老闆娘：錢不夠啊，小哥。去外面多打點怪吧！", "抱歉"); 
     } 
